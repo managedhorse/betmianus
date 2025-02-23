@@ -75,7 +75,17 @@ const pointerVariants = {
     };
   
     return (
-      <Box w="full" maxW="800px" mx="auto" mt={8} display="flex" flexDirection="column" gap={6} id="faq">
+      <Box
+      w="full"
+      maxW="800px"
+      mx="auto"
+      mt={8}
+      px={{ base: 4, md: 0 }} 
+      display="flex"
+      flexDirection="column"
+      gap={6}
+      id="faq"
+      >
         <Text as="h2" fontSize="2xl" fontWeight="bold" color="white" mb={4}>
           Frequently Asked Questions
         </Text>
