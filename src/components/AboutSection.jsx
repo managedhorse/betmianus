@@ -8,7 +8,6 @@ import {
   Text,
   SimpleGrid,
   Container,
-  VStack,
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 
@@ -19,7 +18,7 @@ import fair from '../images/fair.webp';
 import chains from '../images/chains.webp';
 import ggr from '../images/ggr.webp';
 import CoinTickerRandom from '../components/CoinTicker';
-import Betpreview from '../images/betPreview.webp';
+import Betpreview from '../images/betpreview.webp';
 import Animatedarrow from '../components/AnimatedArrow';
 
 const MotionBox = motion.create(Box);
