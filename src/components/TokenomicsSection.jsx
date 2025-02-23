@@ -345,6 +345,12 @@ const TokenomicsSection = () => {
                 transform="translate(-50%, -50%)"
                 animate={{ rotate: 360 }}
                 transition={{ duration: 4, ease: 'linear', repeat: Infinity }}
+                sx={{
+                    '@media (max-width: 400px)': {
+                      top: '31.5%',    // Adjust these as needed
+                      left: '41%'    // so the coin stays centered
+                    }
+                  }}
               />
             </Box>
 
