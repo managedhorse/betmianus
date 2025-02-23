@@ -172,7 +172,7 @@ const BetMianus = () => {
                       Plunge into Mianus for endless thrills and instant crypto wins!
                     </Heading>
                     <Flex gap={4}>
-                    <Tooltip label="Coming soon" hasArrow>
+                    <Tooltip label="Coming soon" hasArrow shouldWrapChildren>
   <Button
     isDisabled
     {...buttonHoverStyle}
@@ -188,7 +188,7 @@ const BetMianus = () => {
     _disabled={{
       opacity: 0.7,
       cursor: "not-allowed",
-      bgGradient: basePinkGradient, 
+      bgGradient: basePinkGradient,
     }}
   >
     Buy Now
