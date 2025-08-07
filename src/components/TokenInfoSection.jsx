@@ -118,12 +118,12 @@ const TokenInfoSection = () => {
             </VStack>
           </MotionBox>
 
+          {/* BSC Exclusive */}
           <MotionBox 
             {...baseCardStyle}
             bgGradient="linear(to-r, #42A1FF, #6FD2FF)" 
           >
             <VStack spacing={2} h="100%">
-
               <Box 
                 h={topContentHeight} 
                 w="100%" 
@@ -131,16 +131,11 @@ const TokenInfoSection = () => {
                 alignItems="center" 
                 justifyContent="center"
               >
-                <HStack spacing={4}>
-                  <Image src={EthLogo} alt="Ethereum" boxSize="40px" />
-                  <Image src={BaseLogo} alt="Base" boxSize="40px" />
-                  <Image src={BscLogo} alt="BSC" boxSize="40px" />
-                  <Image src={SolLogo} alt="Solana" boxSize="40px" />
-                </HStack>
+                <Image src={BscLogo} alt="Binance Smart Chain" boxSize="40px" />
               </Box>
               <Divider borderColor="white" />
-              <Text fontFamily="'Slackey', sans-serif" fontSize={textFontSize} color="white" pt={2}>
-                Mianus Chains
+              <Text fontSize={textFontSize} pt={2}>
+                Mianus on BSC
               </Text>
             </VStack>
           </MotionBox>
