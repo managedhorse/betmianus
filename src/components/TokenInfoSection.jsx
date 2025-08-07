@@ -131,7 +131,7 @@ const TokenInfoSection = () => {
                 alignItems="center" 
                 justifyContent="center"
               >
-                <Image src={BscLogo} alt="Binance Smart Chain" boxSize="40px" />
+                <Image src={BscLogo} alt="Binance Smart Chain" boxSize="50px" />
               </Box>
               <Divider borderColor="white" />
               <Text fontSize={textFontSize} pt={2}>
