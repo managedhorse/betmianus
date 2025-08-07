@@ -147,7 +147,7 @@ const TokenInfoSection = () => {
           mt={8} 
           color="white"
         >
-          With the crypto gambling market booming, we’re set to become a major player in the industry. Moreover, leveraging innovative wormhole NTT smart contracts, the $Mianus token is natively multichain, offering seamless, cross-chain transactions and empowering you to engage with digital finance like never before.
+          With the crypto gambling market booming, we’re poised to lead the industry. Launched on Binance Smart Chain, the $Mianus token delivers fast transactions and empowers you to engage with decentralized finance like never before.
         </Text>
       </Container>
     </Box>
