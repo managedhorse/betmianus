@@ -1,3 +1,4 @@
+// src/components/AuthModal.jsx
 import { useEffect, useMemo, useState } from 'react';
 import {
   Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody,
@@ -42,10 +43,31 @@ async function postJSON(url, body) {
 
 export default function AuthModal({ isOpen, onClose }) {
   const { user } = useAuth();
-  const [pendingEmail, setPendingEmail] = useState('');
+
   // -------- View state: "auth" (tabs) or "reset" (set new password) --------
   const [view, setView] = useState('auth'); // 'auth' | 'reset'
   const [isRecoverySession, setIsRecoverySession] = useState(false);
+
+  // Messaging
+  const [msg, setMsg] = useState('');
+  const [pendingEmail, setPendingEmail] = useState(''); // for "resend confirmation"
+  const [existingEmail, setExistingEmail] = useState(''); // for "email already registered"
+  useEffect(() => {
+    if (isOpen) {
+      setMsg('');
+      setPendingEmail('');
+      setExistingEmail('');
+    }
+  }, [isOpen]);
+
+  // Loaders
+  const [loadingGoogle, setLoadingGoogle] = useState(false);
+  const [loadingEmailIn, setLoadingEmailIn] = useState(false);
+  const [loadingNickIn, setLoadingNickIn] = useState(false);
+  const [loadingEmailUp, setLoadingEmailUp] = useState(false);
+  const [loadingNickUp, setLoadingNickUp] = useState(false);
+  const [loadingReset, setLoadingReset] = useState(false);
+  const [loadingSetPwLink, setLoadingSetPwLink] = useState(false);
 
   // Detect Supabase recovery flow (email link lands with #type=recovery)
   useEffect(() => {
@@ -54,7 +76,6 @@ export default function AuthModal({ isOpen, onClose }) {
       setView('reset');
       setIsRecoverySession(true);
     }
-    // Also listen for Supabase event
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
         setView('reset');
@@ -69,18 +90,6 @@ export default function AuthModal({ isOpen, onClose }) {
     if (isOpen && user && view !== 'reset') onClose();
   }, [isOpen, user, view, onClose]);
 
-  // messaging
-  const [msg, setMsg] = useState('');
-  useEffect(() => { if (isOpen) setMsg(''); }, [isOpen]);
-
-  // loaders
-  const [loadingGoogle, setLoadingGoogle] = useState(false);
-  const [loadingEmailIn, setLoadingEmailIn] = useState(false);
-  const [loadingNickIn, setLoadingNickIn] = useState(false);
-  const [loadingEmailUp, setLoadingEmailUp] = useState(false);
-  const [loadingNickUp, setLoadingNickUp] = useState(false);
-  const [loadingReset, setLoadingReset] = useState(false);
-
   // ---------- actions ----------
   const google = async () => {
     setMsg('');
@@ -94,9 +103,20 @@ export default function AuthModal({ isOpen, onClose }) {
   };
 
   const resendConfirmation = async () => {
-  if (!pendingEmail) return;
-  const { error } = await supabase.auth.resend({ type: 'signup', email: pendingEmail });
-  setMsg(error ? error.message : `Confirmation email re-sent to ${pendingEmail}.`);
+    if (!pendingEmail) return;
+    const { error } = await supabase.auth.resend({ type: 'signup', email: pendingEmail });
+    setMsg(error ? error.message : `Confirmation email re-sent to ${pendingEmail}.`);
+  };
+
+  const sendPasswordSetupLink = async (email) => {
+    if (!email) return;
+    setMsg('');
+    setLoadingSetPwLink(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}`,
+    });
+    setMsg(error ? error.message : `We sent a password set link to ${email}.`);
+    setLoadingSetPwLink(false);
   };
 
   // ---------- forms ----------
@@ -186,7 +206,7 @@ export default function AuthModal({ isOpen, onClose }) {
       <form onSubmit={submit}>
         <VStack align="stretch" spacing={3}>
           <Input
-            placeholder="Nickname"
+            placeholder="Nickname (3–20 letters/numbers/_)"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
@@ -219,32 +239,47 @@ export default function AuthModal({ isOpen, onClose }) {
     const [agree, setAgree] = useState(false);
 
     const submit = async (e) => {
-  e.preventDefault();
-  setMsg('');
-  if (!agree) return setMsg('Please confirm you are 18+ and accept the Terms.');
-  setLoadingEmailUp(true);
+      e.preventDefault();
+      setMsg('');
+      setExistingEmail('');
+      if (!agree) return setMsg('Please confirm you are 18+ and accept the Terms.');
+      setLoadingEmailUp(true);
 
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: { emailRedirectTo: window.location.origin },
-  });
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: window.location.origin },
+      });
 
-  setLoadingEmailUp(false);
+      setLoadingEmailUp(false);
 
-  if (error) return setMsg(error.message);
+      if (error) {
+        // Supabase/GoTrue commonly returns code 'user_already_exists' with message like "User already registered"
+        const already =
+          error.code === 'user_already_exists' ||
+          /already\s+(exists|registered)/i.test(error.message || '');
+        if (already) {
+          setExistingEmail(email);
+          setMsg(
+            'That email is already registered. You can log in, use “Continue with Google” if you used it before, or set a password for this email.'
+          );
+        } else {
+          setMsg(error.message);
+        }
+        return;
+      }
 
-  // If there's a session, email confirmation is OFF and no email is coming.
-  if (data?.session) {
-    setPendingEmail('');
-    setMsg('Account created. You’re signed in!');
-    return;
-  }
+      // If there's a session, email confirmation is OFF: user is signed in immediately.
+      if (data?.session) {
+        setPendingEmail('');
+        setMsg('Account created. You’re signed in!');
+        return;
+      }
 
-  // No session → confirmation required; store for "Resend"
-  setPendingEmail(email);
-  setMsg(`We sent a confirmation link to ${email}.`);
-};
+      // No session → confirmation required
+      setPendingEmail(email);
+      setMsg(`We sent a confirmation link to ${email}.`);
+    };
 
     return (
       <form onSubmit={submit}>
@@ -275,14 +310,39 @@ export default function AuthModal({ isOpen, onClose }) {
             I am 18+ and accept the Terms & Risk Policy
           </Checkbox>
           <Button type="submit" isLoading={loadingEmailUp}>Create account</Button>
+
+          {/* If confirmation is required, offer "resend" */}
           {pendingEmail && (
-  <Text fontSize="sm" color="gray.700">
-    Didn’t get it?{' '}
-    <Link onClick={resendConfirmation} textDecoration="underline">
-      Resend confirmation email
-    </Link>
-  </Text>
-)}
+            <Text fontSize="sm" color="gray.700">
+              Didn’t get it?{' '}
+              <Link onClick={resendConfirmation} textDecoration="underline">
+                Resend confirmation email
+              </Link>
+            </Text>
+          )}
+
+          {/* If email already exists, offer to set password for that email */}
+          {existingEmail && (
+            <Box fontSize="sm" color="gray.700">
+              <VStack align="start" spacing={2} mt={2}>
+                <Button
+                  size="sm"
+                  variant="link"
+                  onClick={() => sendPasswordSetupLink(existingEmail)}
+                  isLoading={loadingSetPwLink}
+                >
+                  Send password set link to {existingEmail}
+                </Button>
+                <Text>
+                  Or try{' '}
+                  <Link onClick={google} textDecoration="underline">
+                    Continue with Google
+                  </Link>
+                  .
+                </Text>
+              </VStack>
+            </Box>
+          )}
         </VStack>
       </form>
     );
@@ -355,23 +415,20 @@ export default function AuthModal({ isOpen, onClose }) {
       if (pw1 !== pw2) return setMsg('Passwords do not match.');
       setSaving(true);
       const { error } = await supabase.auth.updateUser({ password: pw1 });
-if (error) {
-  setMsg(error.message);
-} else {
-  setMsg('Password updated. You can now sign in.');
-  setTimeout(() => setView('auth'), 1200); // <- automatically go back
-}
-setSaving(false);
+      if (error) setMsg(error.message);
+      else {
+        setMsg('Password updated. You can now sign in.');
+        setTimeout(() => setView('auth'), 1200);
+      }
+      setSaving(false);
     };
 
     const goBack = async () => {
       setMsg('');
-      // If we came from a recovery link, clear that session so user returns to normal auth.
       if (isRecoverySession) {
         try { await supabase.auth.signOut(); } catch {}
         setIsRecoverySession(false);
       }
-      // Clean #hash params that Supabase added
       if (window.location.hash) {
         history.replaceState(null, '', window.location.pathname + window.location.search);
       }
@@ -502,31 +559,30 @@ setSaving(false);
         <ModalBody pb={6}>
           <Box>
             {view === 'auth' ? (
-  AuthTabs
-) : (
-  <Box>
-    {/* Binder-style static header (no Tabs context) */}
-    <Box display="flex" gap={2} mb="-1px">
-      <Box
-        px={4}
-        py={2}
-        fontWeight="semibold"
-        color="gray.900"
-        bg="white"
-        border="1px solid"
-        borderColor="gray.300"
-        borderBottom="none"
-        borderTopRadius="md"
-      >
-        Reset
-      </Box>
-    </Box>
-
-    <Box borderWidth="1px" borderColor="gray.300" rounded="md" bg="white" p={5}>
-      <ResetPanel />
-    </Box>
-  </Box>
-)}
+              AuthTabs
+            ) : (
+              // "Reset" header styled like a binder tab, without Tabs context
+              <Box>
+                <Box display="flex" gap={2} mb="-1px">
+                  <Box
+                    px={4}
+                    py={2}
+                    fontWeight="semibold"
+                    color="gray.900"
+                    bg="white"
+                    border="1px solid"
+                    borderColor="gray.300"
+                    borderBottom="none"
+                    borderTopRadius="md"
+                  >
+                    Reset
+                  </Box>
+                </Box>
+                <Box borderWidth="1px" borderColor="gray.300" rounded="md" bg="white" p={5}>
+                  <ResetPanel />
+                </Box>
+              </Box>
+            )}
           </Box>
 
           {msg && (
