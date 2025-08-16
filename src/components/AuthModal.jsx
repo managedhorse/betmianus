@@ -1,29 +1,13 @@
-// src/components/AuthModal.jsx
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalCloseButton,
-  ModalBody,
-  Tabs,
-  TabList,
-  TabPanels,
-  Tab,
-  TabPanel,
-  Button,
-  Input,
-  VStack,
-  Text,
-  Checkbox,
-  HStack,
-  Divider,
+  Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody,
+  Tabs, TabList, TabPanels, Tab, TabPanel,
+  Button, Input, VStack, Text, Checkbox, HStack, Divider, Link, Box, Icon
 } from '@chakra-ui/react';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../context/AuthContext';
+import { FiArrowLeft } from 'react-icons/fi';
 
-// Binder-style tab: selected tab visually fuses with the card below it
 const binderTab = {
   px: 4,
   py: 2,
@@ -40,8 +24,8 @@ const binderTab = {
     color: 'gray.900',
     bg: 'white',
     borderColor: 'gray.300',
-    borderBottomColor: 'white', // fuse with panel
-    mb: '-1px',                 // overlap the panel’s top border by 1px
+    borderBottomColor: 'white',
+    mb: '-1px',
   },
 };
 
@@ -59,24 +43,45 @@ async function postJSON(url, body) {
 export default function AuthModal({ isOpen, onClose }) {
   const { user } = useAuth();
 
-  // Close when user becomes signed in
-  useEffect(() => {
-    if (isOpen && user) onClose();
-  }, [isOpen, user, onClose]);
+  // -------- View state: "auth" (tabs) or "reset" (set new password) --------
+  const [view, setView] = useState('auth'); // 'auth' | 'reset'
+  const [isRecoverySession, setIsRecoverySession] = useState(false);
 
+  // Detect Supabase recovery flow (email link lands with #type=recovery)
+  useEffect(() => {
+    const fromHash = new URLSearchParams(window.location.hash.slice(1));
+    if (fromHash.get('type') === 'recovery') {
+      setView('reset');
+      setIsRecoverySession(true);
+    }
+    // Also listen for Supabase event
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setView('reset');
+        setIsRecoverySession(true);
+      }
+    });
+    return () => sub.subscription?.unsubscribe();
+  }, []);
+
+  // Auto-close when signed in — but not while on the reset screen.
+  useEffect(() => {
+    if (isOpen && user && view !== 'reset') onClose();
+  }, [isOpen, user, view, onClose]);
+
+  // messaging
   const [msg, setMsg] = useState('');
-  useEffect(() => {
-    if (isOpen) setMsg('');
-  }, [isOpen]);
+  useEffect(() => { if (isOpen) setMsg(''); }, [isOpen]);
 
-  // Per-action loaders
+  // loaders
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [loadingEmailIn, setLoadingEmailIn] = useState(false);
   const [loadingNickIn, setLoadingNickIn] = useState(false);
   const [loadingEmailUp, setLoadingEmailUp] = useState(false);
   const [loadingNickUp, setLoadingNickUp] = useState(false);
+  const [loadingReset, setLoadingReset] = useState(false);
 
-  // ----- Actions -----
+  // ---------- actions ----------
   const google = async () => {
     setMsg('');
     setLoadingGoogle(true);
@@ -88,10 +93,11 @@ export default function AuthModal({ isOpen, onClose }) {
     setLoadingGoogle(false);
   };
 
-  // ----- Forms -----
+  // ---------- forms ----------
   const EmailSignIn = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+
     const submit = async (e) => {
       e.preventDefault();
       setMsg('');
@@ -100,6 +106,19 @@ export default function AuthModal({ isOpen, onClose }) {
       if (error) setMsg(error.message);
       setLoadingEmailIn(false);
     };
+
+    const forgot = async () => {
+      setMsg('');
+      if (!email) return setMsg('Enter your email above first.');
+      setLoadingReset(true);
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}`,
+      });
+      if (error) setMsg(error.message);
+      else setMsg('Password reset email sent. Check your inbox.');
+      setLoadingReset(false);
+    };
+
     return (
       <form onSubmit={submit}>
         <VStack align="stretch" spacing={3}>
@@ -125,9 +144,13 @@ export default function AuthModal({ isOpen, onClose }) {
             _placeholder={{ color: 'gray.500' }}
             _focus={{ borderColor: 'gray.700', boxShadow: 'none' }}
           />
-          <Button type="submit" isLoading={loadingEmailIn}>
-            Log in
-          </Button>
+          <HStack justify="space-between">
+            <span />
+            <Link onClick={forgot} fontSize="sm" color="gray.700" _hover={{ color: 'gray.900' }}>
+              {loadingReset ? 'Sending…' : 'Forgot password?'}
+            </Link>
+          </HStack>
+          <Button type="submit" isLoading={loadingEmailIn}>Log in</Button>
         </VStack>
       </form>
     );
@@ -136,6 +159,7 @@ export default function AuthModal({ isOpen, onClose }) {
   const NicknameSignIn = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+
     const submit = async (e) => {
       e.preventDefault();
       setMsg('');
@@ -151,6 +175,7 @@ export default function AuthModal({ isOpen, onClose }) {
       }
       setLoadingNickIn(false);
     };
+
     return (
       <form onSubmit={submit}>
         <VStack align="stretch" spacing={3}>
@@ -175,9 +200,7 @@ export default function AuthModal({ isOpen, onClose }) {
             _placeholder={{ color: 'gray.500' }}
             _focus={{ borderColor: 'gray.700', boxShadow: 'none' }}
           />
-          <Button type="submit" isLoading={loadingNickIn}>
-            Log in with nickname
-          </Button>
+          <Button type="submit" isLoading={loadingNickIn}>Log in with nickname</Button>
         </VStack>
       </form>
     );
@@ -188,13 +211,11 @@ export default function AuthModal({ isOpen, onClose }) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [agree, setAgree] = useState(false);
+
     const submit = async (e) => {
       e.preventDefault();
       setMsg('');
-      if (!agree) {
-        setMsg('Please confirm you are 18+ and accept the Terms.');
-        return;
-      }
+      if (!agree) return setMsg('Please confirm you are 18+ and accept the Terms.');
       setLoadingEmailUp(true);
       const { error } = await supabase.auth.signUp({
         email,
@@ -204,6 +225,7 @@ export default function AuthModal({ isOpen, onClose }) {
       setMsg(error ? error.message : 'Check your email to confirm your account.');
       setLoadingEmailUp(false);
     };
+
     return (
       <form onSubmit={submit}>
         <VStack align="stretch" spacing={3}>
@@ -232,9 +254,7 @@ export default function AuthModal({ isOpen, onClose }) {
           <Checkbox isChecked={agree} onChange={(e) => setAgree(e.target.checked)}>
             I am 18+ and accept the Terms & Risk Policy
           </Checkbox>
-          <Button type="submit" isLoading={loadingEmailUp}>
-            Create account
-          </Button>
+          <Button type="submit" isLoading={loadingEmailUp}>Create account</Button>
         </VStack>
       </form>
     );
@@ -244,17 +264,13 @@ export default function AuthModal({ isOpen, onClose }) {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [agree, setAgree] = useState(false);
+
     const submit = async (e) => {
       e.preventDefault();
       setMsg('');
-      if (!agree) {
-        setMsg('Please confirm you are 18+ and accept the Terms.');
-        return;
-      }
-      if (!/^[A-Za-z0-9_]{3,20}$/.test(username)) {
-        setMsg('Nickname must be 3–20 characters: letters, numbers, underscore.');
-        return;
-      }
+      if (!agree) return setMsg('Please confirm you are 18+ and accept the Terms.');
+      if (!/^[A-Za-z0-9_]{3,20}$/.test(username))
+        return setMsg('Nickname must be 3–20 characters: letters, numbers, underscore.');
       setLoadingNickUp(true);
       try {
         await postJSON('/api/signup-nickname', { username, password });
@@ -264,6 +280,7 @@ export default function AuthModal({ isOpen, onClose }) {
       }
       setLoadingNickUp(false);
     };
+
     return (
       <form onSubmit={submit}>
         <VStack align="stretch" spacing={3}>
@@ -291,13 +308,156 @@ export default function AuthModal({ isOpen, onClose }) {
           <Checkbox isChecked={agree} onChange={(e) => setAgree(e.target.checked)}>
             I am 18+ and accept the Terms & Risk Policy
           </Checkbox>
-          <Button type="submit" isLoading={loadingNickUp}>
-            Create nickname account
-          </Button>
+          <Button type="submit" isLoading={loadingNickUp}>Create nickname account</Button>
         </VStack>
       </form>
     );
   };
+
+  // -------- Reset Password panel (inside modal) --------
+  const ResetPanel = () => {
+    const [pw1, setPw1] = useState('');
+    const [pw2, setPw2] = useState('');
+    const [saving, setSaving] = useState(false);
+
+    const submit = async (e) => {
+      e.preventDefault();
+      setMsg('');
+      if (pw1.length < 6) return setMsg('Password must be at least 6 characters.');
+      if (pw1 !== pw2) return setMsg('Passwords do not match.');
+      setSaving(true);
+      const { error } = await supabase.auth.updateUser({ password: pw1 });
+      if (error) setMsg(error.message);
+      else setMsg('Password updated. You can now continue.');
+      setSaving(false);
+    };
+
+    const goBack = async () => {
+      setMsg('');
+      // If we came from a recovery link, clear that session so user returns to normal auth.
+      if (isRecoverySession) {
+        try { await supabase.auth.signOut(); } catch {}
+        setIsRecoverySession(false);
+      }
+      // Clean #hash params that Supabase added
+      if (window.location.hash) {
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
+      setView('auth');
+    };
+
+    return (
+      <VStack align="stretch" spacing={4}>
+        <HStack>
+          <Button onClick={goBack} size="sm" variant="ghost" leftIcon={<Icon as={FiArrowLeft} />}>
+            Back to log in
+          </Button>
+        </HStack>
+
+        <Text fontWeight="semibold">Set a new password</Text>
+        <form onSubmit={submit}>
+          <VStack align="stretch" spacing={3}>
+            <Input
+              type="password"
+              placeholder="New password"
+              value={pw1}
+              onChange={(e) => setPw1(e.target.value)}
+              required
+              bg="white"
+              borderColor="gray.400"
+              _placeholder={{ color: 'gray.500' }}
+              _focus={{ borderColor: 'gray.700', boxShadow: 'none' }}
+            />
+            <Input
+              type="password"
+              placeholder="Confirm new password"
+              value={pw2}
+              onChange={(e) => setPw2(e.target.value)}
+              required
+              bg="white"
+              borderColor="gray.400"
+              _placeholder={{ color: 'gray.500' }}
+              _focus={{ borderColor: 'gray.700', boxShadow: 'none' }}
+            />
+            <Button type="submit" isLoading={saving}>Update password</Button>
+          </VStack>
+        </form>
+      </VStack>
+    );
+  };
+
+  // -------- Render --------
+  const AuthTabs = useMemo(
+    () => (
+      <Tabs isFitted variant="unstyled">
+        <TabList gap={2} mb="-1px">
+          <Tab sx={binderTab}>Log in</Tab>
+          <Tab sx={binderTab}>Sign up</Tab>
+        </TabList>
+
+        <TabPanels borderWidth="1px" borderColor="gray.300" rounded="md" bg="white" p={5}>
+          {/* LOG IN */}
+          <TabPanel>
+            <VStack align="stretch" spacing={4}>
+              <Button
+                onClick={google}
+                isLoading={loadingGoogle}
+                variant="outline"
+                borderColor="gray.300"
+                _hover={{ bg: 'gray.50' }}
+                _focus={{ boxShadow: 'none' }}
+              >
+                Continue with Google
+              </Button>
+
+              <HStack align="center"><Divider /><Text color="gray.600">or</Text><Divider /></HStack>
+
+              <Tabs variant="line" colorScheme="gray" isFitted>
+                <TabList>
+                  <Tab fontWeight="semibold" _focus={{ boxShadow: 'none' }}>Email</Tab>
+                  <Tab fontWeight="semibold" _focus={{ boxShadow: 'none' }}>Nickname</Tab>
+                </TabList>
+                <TabPanels pt={4}>
+                  <TabPanel px={0}><EmailSignIn /></TabPanel>
+                  <TabPanel px={0}><NicknameSignIn /></TabPanel>
+                </TabPanels>
+              </Tabs>
+            </VStack>
+          </TabPanel>
+
+          {/* SIGN UP */}
+          <TabPanel>
+            <VStack align="stretch" spacing={4}>
+              <Button
+                onClick={google}
+                isLoading={loadingGoogle}
+                variant="outline"
+                borderColor="gray.300"
+                _hover={{ bg: 'gray.50' }}
+                _focus={{ boxShadow: 'none' }}
+              >
+                Continue with Google
+              </Button>
+
+              <HStack align="center"><Divider /><Text color="gray.600">or</Text><Divider /></HStack>
+
+              <Tabs variant="line" colorScheme="gray" isFitted>
+                <TabList>
+                  <Tab fontWeight="semibold" _focus={{ boxShadow: 'none' }}>Email</Tab>
+                  <Tab fontWeight="semibold" _focus={{ boxShadow: 'none' }}>Nickname</Tab>
+                </TabList>
+                <TabPanels pt={4}>
+                  <TabPanel px={0}><EmailSignUp /></TabPanel>
+                  <TabPanel px={0}><NicknameSignUp /></TabPanel>
+                </TabPanels>
+              </Tabs>
+            </VStack>
+          </TabPanel>
+        </TabPanels>
+      </Tabs>
+    ),
+    [loadingGoogle] // eslint-disable-line react-hooks/exhaustive-deps
+  );
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} isCentered>
@@ -307,106 +467,24 @@ export default function AuthModal({ isOpen, onClose }) {
           Account
         </ModalHeader>
         <ModalCloseButton />
-
         <ModalBody pb={6}>
-          {/* ROOT TABS (binder style) */}
-          <Tabs isFitted variant="unstyled">
-            <TabList gap={2} mb="-1px">
-              <Tab sx={binderTab}>Log in</Tab>
-              <Tab sx={binderTab}>Sign up</Tab>
-            </TabList>
-
-            {/* White card that the selected tab connects to */}
-            <TabPanels
-              borderWidth="1px"
-              borderColor="gray.300"
-              rounded="md"
-              bg="white"
-              p={5}
-            >
-              {/* ---------- LOG IN ---------- */}
-              <TabPanel>
-                <VStack align="stretch" spacing={4}>
-                  <Button
-                    onClick={google}
-                    isLoading={loadingGoogle}
-                    variant="outline"
-                    borderColor="gray.300"
-                    _hover={{ bg: 'gray.50' }}
-                    _focus={{ boxShadow: 'none' }}
-                  >
-                    Continue with Google
-                  </Button>
-
-                  <HStack align="center">
-                    <Divider />
-                    <Text color="gray.600">or</Text>
-                    <Divider />
-                  </HStack>
-
-                  <Tabs variant="line" colorScheme="gray" isFitted>
-                    <TabList>
-                      <Tab fontWeight="semibold" _focus={{ boxShadow: 'none' }}>
-                        Email
-                      </Tab>
-                      <Tab fontWeight="semibold" _focus={{ boxShadow: 'none' }}>
-                        Nickname
-                      </Tab>
-                    </TabList>
-                    <TabPanels pt={4}>
-                      <TabPanel px={0}>
-                        <EmailSignIn />
-                      </TabPanel>
-                      <TabPanel px={0}>
-                        <NicknameSignIn />
-                      </TabPanel>
-                    </TabPanels>
-                  </Tabs>
-                </VStack>
-              </TabPanel>
-
-              {/* ---------- SIGN UP ---------- */}
-              <TabPanel>
-                <VStack align="stretch" spacing={4}>
-                  <Button
-                    onClick={google}
-                    isLoading={loadingGoogle}
-                    variant="outline"
-                    borderColor="gray.300"
-                    _hover={{ bg: 'gray.50' }}
-                    _focus={{ boxShadow: 'none' }}
-                  >
-                    Continue with Google
-                  </Button>
-
-                  <HStack align="center">
-                    <Divider />
-                    <Text color="gray.600">or</Text>
-                    <Divider />
-                  </HStack>
-
-                  <Tabs variant="line" colorScheme="gray" isFitted>
-                    <TabList>
-                      <Tab fontWeight="semibold" _focus={{ boxShadow: 'none' }}>
-                        Email
-                      </Tab>
-                      <Tab fontWeight="semibold" _focus={{ boxShadow: 'none' }}>
-                        Nickname
-                      </Tab>
-                    </TabList>
-                    <TabPanels pt={4}>
-                      <TabPanel px={0}>
-                        <EmailSignUp />
-                      </TabPanel>
-                      <TabPanel px={0}>
-                        <NicknameSignUp />
-                      </TabPanel>
-                    </TabPanels>
-                  </Tabs>
-                </VStack>
-              </TabPanel>
-            </TabPanels>
-          </Tabs>
+          <Box>
+            {view === 'auth' ? (
+              AuthTabs
+            ) : (
+              // binder look for the single Reset panel too
+              <Box>
+                <TabList gap={2} mb="-1px">
+                  <Tab sx={{ ...binderTab, _selected: { ...binderTab._selected } }} isDisabled>
+                    Reset
+                  </Tab>
+                </TabList>
+                <Box borderWidth="1px" borderColor="gray.300" rounded="md" bg="white" p={5}>
+                  <ResetPanel />
+                </Box>
+              </Box>
+            )}
+          </Box>
 
           {msg && (
             <Text mt={3} fontSize="sm" color="gray.800">
