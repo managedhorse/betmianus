@@ -232,60 +232,66 @@ export default function AuthModal({ isOpen, onClose }) {
     );
   };
 
-  // Email sign-up (no nickname)
   const EmailSignUp = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [agree, setAgree] = useState(false);
+  const [existingProviders, setExistingProviders] = useState([]); // <— add
 
   const submit = async (e) => {
     e.preventDefault();
     setMsg('');
     setExistingEmail('');
+    setPendingEmail('');
+    setExistingProviders([]);
     if (!agree) return setMsg('Please confirm you are 18+ and accept the Terms.');
-    setLoadingEmailUp(true);
 
+    // 1) PRE-CHECK on the server — block if email already exists for any provider
+    try {
+      const check = await postJSON('/api/check-email', { email });
+      if (check.exists) {
+        setExistingEmail(email);
+        setExistingProviders(check.providers || []);
+        if ((check.providers || []).includes('email')) {
+          // Already has email/password
+          setMsg('That email is already registered. Log in or reset your password.');
+        } else if ((check.providers || []).includes('google')) {
+          // Google-only account
+          setMsg('That email is already used with Google. Sign in with Google, or set a password for it.');
+        } else {
+          setMsg('That email is already in use.');
+        }
+        return; // <- DO NOT call signUp()
+      }
+    } catch (err) {
+      // If the check fails for some reason, fall back to existing behavior or show an error:
+      setMsg('Could not verify email. Please try again.');
+      return;
+    }
+
+    // 2) Safe to create the email/password account
+    setLoadingEmailUp(true);
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { emailRedirectTo: window.location.origin },
     });
-
     setLoadingEmailUp(false);
 
-    if (error) {
-      const already =
-        error.code === 'user_already_exists' ||
-        /already\s+(exists|registered)/i.test(error.message || '');
-      if (already) {
-        // Case 2: already registered with email/password
-        setExistingEmail(email);
-        return setMsg(
-          'That email is already registered. You can log in, use “Continue with Google” if you used it before, or set a password for this email.'
-        );
-      }
-      return setMsg(error.message);
-    }
+    if (error) return setMsg(error.message);
 
     // If there's a session, confirmation is OFF → signed in immediately
     if (data?.session) {
-      setPendingEmail('');
-      return setMsg('Account created. You’re signed in!');
+      setMsg('Account created. You’re signed in!');
+      return;
     }
 
-    // No session → confirmation required.
-    // Detect Case 3: this email already had Google; user is linking a password.
-    const providers = (data?.user?.identities || []).map((i) => i.provider);
-    if (providers.includes('google') && providers.includes('email')) {
-      setMsg(
-        `You're adding a password to an existing Google account. We sent a confirmation link to ${email}.`
-      );
-    } else {
-      setMsg(`We sent a confirmation link to ${email}.`);
-    }
+    // Confirmation required
     setPendingEmail(email);
+    setMsg(`We sent a confirmation link to ${email}.`);
   };
 
+  // UI (unchanged, but shows different actions when we blocked for existing email)
   return (
     <form onSubmit={submit}>
       <VStack align="stretch" spacing={3}>
@@ -316,6 +322,7 @@ export default function AuthModal({ isOpen, onClose }) {
         </Checkbox>
         <Button type="submit" isLoading={loadingEmailUp}>Create account</Button>
 
+        {/* Only shown when we actually did signUp and Supabase will send an email */}
         {pendingEmail && (
           <Text fontSize="sm" color="gray.700">
             Didn’t get it?{' '}
@@ -325,24 +332,39 @@ export default function AuthModal({ isOpen, onClose }) {
           </Text>
         )}
 
-        {existingEmail && (
-  <Box fontSize="sm" color="gray.700">
-    <VStack align="start" spacing={2} mt={2}>
-      <Button size="sm" variant="link"
-        onClick={() => sendPasswordSetupLink(existingEmail)}
-        isLoading={loadingSetPwLink}>
-        Send password set link to {existingEmail}
-      </Button>
-      <Button size="sm" variant="link"
-        onClick={resendConfirmation}>
-        Resend confirmation email
-      </Button>
-      <Text>
-        Or try <Link onClick={google} textDecoration="underline">Continue with Google</Link>.
-      </Text>
-    </VStack>
-  </Box>
-)}
+        {/* Shown when we blocked because the email already exists */}
+        {existingEmail && !pendingEmail && (
+          <Box fontSize="sm" color="gray.700">
+            <VStack align="start" spacing={2} mt={2}>
+              {existingProviders.includes('email') && (
+                <Button
+                  size="sm"
+                  variant="link"
+                  onClick={() => supabase.auth.resetPasswordForEmail(existingEmail, { redirectTo: window.location.origin })}
+                  isLoading={loadingSetPwLink}
+                >
+                  Send password reset link to {existingEmail}
+                </Button>
+              )}
+              {existingProviders.includes('google') && (
+                <Button
+                  size="sm"
+                  variant="link"
+                  onClick={() => sendPasswordSetupLink(existingEmail)}
+                  isLoading={loadingSetPwLink}
+                >
+                  Send password set link to {existingEmail}
+                </Button>
+              )}
+              {existingProviders.includes('google') && (
+                <Text>
+                  Or sign in with{' '}
+                  <Link onClick={google} textDecoration="underline">Google</Link>.
+                </Text>
+              )}
+            </VStack>
+          </Box>
+        )}
       </VStack>
     </form>
   );
