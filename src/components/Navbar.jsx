@@ -146,42 +146,42 @@ const Navbar = () => {
             <CustomConnectButton />
 
             {user ? (
-              <Menu>
-                <MenuButton as={Button} variant="ghost" px={1}>
-                  <HStack>
-                    <Avatar
-                      size="sm"
-                      name={profile?.username || user?.email || 'User'}
-                    />
-                  </HStack>
-                </MenuButton>
-                <MenuList>
-                  <MenuItem isDisabled>
-                    {profile?.username ? `@${profile.username}` : (user?.email || 'Signed in')}
-                  </MenuItem>
-                  <MenuItem isDisabled>
-                    {profile?.public_id ? `UID #${profile.public_id}` : 'UID pending'}
-                  </MenuItem>
-                  <MenuItem
-                    onClick={async () => {
-                      await signOut();
-                    }}
-                  >
-                    Sign out
-                  </MenuItem>
-                </MenuList>
-              </Menu>
-            ) : (
-              <Button
-                onClick={openAuth}
-                bgGradient="linear(to-r, #FFCFEF, #FFCFEF)"
-                border="2px solid #2A3335"
-                color="#2A3335"
-                _hover={{ transform: 'translateY(-3px)' }}
-              >
-                Login / Sign up
-              </Button>
-            )}
+    <Menu>
+      <MenuButton as={Button} variant="ghost" px={1}>
+        <HStack>
+          <Avatar size="sm" name={profile?.username || user?.email || 'User'} />
+        </HStack>
+      </MenuButton>
+      <MenuList>
+        <MenuItem isDisabled>
+          {profile?.username ? `@${profile.username}` : (user?.email || 'Signed in')}
+        </MenuItem>
+        <MenuItem isDisabled>
+          {profile?.public_id ? `UID #${profile.public_id}` : 'UID pending'}
+        </MenuItem>
+        <MenuItem
+          onClick={async (e) => {
+            // close menu immediately for visual feedback
+            // (Chakra closes it automatically, this just guarantees it)
+            e.currentTarget.blur();
+            await signOut(); // this will clear state & hard-redirect
+          }}
+        >
+          Sign out
+        </MenuItem>
+      </MenuList>
+    </Menu>
+  ) : (
+    <Button
+      onClick={openAuth}
+      bgGradient="linear(to-r, #FFCFEF, #FFCFEF)"
+      border="2px solid #2A3335"
+      color="#2A3335"
+      _hover={{ transform: 'translateY(-3px)' }}
+    >
+      Login / Sign up
+    </Button>
+  )}
 
             <IconButton
               aria-label="Open Menu"
