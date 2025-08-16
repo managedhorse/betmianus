@@ -8,41 +8,45 @@ import {
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../context/AuthContext';
 
-// tiny helper
 async function postJSON(url, body) {
   const r = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
+    body: JSON.stringify(body),
   });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(j.error || 'Request failed');
   return j;
 }
 
-// shared input style (less pink, clear borders)
+const dark = '#2A3335';
+const panelBgLogin = 'gray.50';   // subtle gray for Log in
+const panelBgSignup = '#fff5f8';  // very light pink for Sign up
+
+// Shared field/button styles (not all-pink)
 const inputStyle = {
   bg: 'white',
-  border: '2px solid #2A3335',
+  border: `2px solid ${dark}`,
   _focus: { borderColor: '#FF6F91', boxShadow: 'none' },
 };
 
 const buttonStyle = {
   bg: 'white',
-  border: '2px solid #2A3335',
+  border: `2px solid ${dark}`,
   _hover: { bg: 'gray.50', transform: 'translateY(-1px)' },
 };
 
 export default function AuthModal({ isOpen, onClose }) {
   const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState(0); // 0=Log in, 1=Sign up
 
-  // Close when signed in
+  // Close the modal once a session exists
   useEffect(() => { if (isOpen && user) onClose(); }, [isOpen, user, onClose]);
 
   const [msg, setMsg] = useState('');
   useEffect(() => { if (isOpen) setMsg(''); }, [isOpen]);
 
-  // individual spinners
+  // Individual spinners
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [loadingEmailIn, setLoadingEmailIn] = useState(false);
   const [loadingEmailUp, setLoadingEmailUp] = useState(false);
@@ -54,7 +58,7 @@ export default function AuthModal({ isOpen, onClose }) {
     setLoadingGoogle(true);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin }
+      options: { redirectTo: window.location.origin },
     });
     if (error) setMsg(error.message);
     setLoadingGoogle(false);
@@ -94,9 +98,8 @@ export default function AuthModal({ isOpen, onClose }) {
         const session = await postJSON('/api/login-username', { username, password });
         await supabase.auth.setSession({
           access_token: session.access_token,
-          refresh_token: session.refresh_token
+          refresh_token: session.refresh_token,
         });
-        // onAuthStateChange closes modal
       } catch (err) {
         setMsg(err.message);
       }
@@ -113,12 +116,11 @@ export default function AuthModal({ isOpen, onClose }) {
     );
   };
 
-  // EMAIL SIGN UP: email + password ONLY (nickname optional/hidden)
+  // EMAIL SIGN UP: email + password only
   const EmailSignUp = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [agree, setAgree] = useState(false);
-
     const submit = async (e) => {
       e.preventDefault();
       setMsg('');
@@ -126,12 +128,11 @@ export default function AuthModal({ isOpen, onClose }) {
       setLoadingEmailUp(true);
       const { error } = await supabase.auth.signUp({
         email, password,
-        options: { emailRedirectTo: window.location.origin }
+        options: { emailRedirectTo: window.location.origin },
       });
       setMsg(error ? error.message : 'Check your email to confirm your account.');
       setLoadingEmailUp(false);
     };
-
     return (
       <form onSubmit={submit}>
         <VStack align="stretch" spacing={3}>
@@ -150,7 +151,6 @@ export default function AuthModal({ isOpen, onClose }) {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [agree, setAgree] = useState(false);
-
     const submit = async (e) => {
       e.preventDefault();
       setMsg('');
@@ -168,7 +168,6 @@ export default function AuthModal({ isOpen, onClose }) {
       }
       setLoadingNickUp(false);
     };
-
     return (
       <form onSubmit={submit}>
         <VStack align="stretch" spacing={3}>
@@ -183,27 +182,22 @@ export default function AuthModal({ isOpen, onClose }) {
     );
   };
 
-  // Nice-looking tabs (actual tabs, not pink pills)
-  const tabStyle = {
-    border: '2px solid #2A3335',
-    borderBottomWidth: '0',
-    bg: '#ffe3ef',
-    _selected: { bg: 'white', color: 'black', borderColor: '#2A3335' },
-    fontWeight: 'semibold',
+  // Tab button styling (actual tab look: flat bottom, grayed inactive)
+  const tabSx = (isActive) => ({
+    px: 6,
+    py: 3,
+    fontWeight: 'bold',
     roundedTop: 'md',
-  };
+    roundedBottom: 'none',
+    border: `2px solid ${dark}`,
+    borderBottom: '0',
+    bg: isActive ? 'white' : 'gray.200',
+    color: isActive ? 'black' : 'gray.600',
+    _hover: { bg: isActive ? 'white' : 'gray.300' },
+  });
 
-  const innerTabStyle = {
-    border: '1px solid #2A3335',
-    borderBottomWidth: '0',
-    bg: 'white',
-    _selected: { bg: 'white', color: 'black', borderColor: '#2A3335' },
-    roundedTop: 'sm',
-    fontWeight: 'semibold',
-  };
-
-  const card = (children) => (
-    <Box border="2px solid #2A3335" rounded="md" p={4} bg="#ffeef5">
+  const Card = ({ bg, children }) => (
+    <Box border={`2px solid ${dark}`} roundedBottom="md" p={4} bg={bg}>
       {children}
     </Box>
   );
@@ -215,15 +209,16 @@ export default function AuthModal({ isOpen, onClose }) {
         <ModalHeader fontFamily="Slackey, cursive" textTransform="uppercase">Account</ModalHeader>
         <ModalCloseButton />
         <ModalBody pb={6}>
-          <Tabs isFitted variant="unstyled">
-            <TabList mb={0}>
-              <Tab {...tabStyle}>Log in</Tab>
-              <Tab {...tabStyle}>Sign up</Tab>
+          <Tabs index={activeTab} onChange={setActiveTab} isFitted variant="unstyled">
+            <TabList borderBottom={`2px solid ${dark}`} mb="0">
+              <Tab sx={tabSx(activeTab === 0)}>Log in</Tab>
+              <Tab sx={tabSx(activeTab === 1)}>Sign up</Tab>
             </TabList>
+
             <TabPanels>
               {/* LOG IN */}
               <TabPanel px={0}>
-                {card(
+                <Card bg={panelBgLogin}>
                   <VStack align="stretch" spacing={4}>
                     <Button onClick={google} isLoading={loadingGoogle} {...buttonStyle}>
                       Continue with Google
@@ -231,9 +226,9 @@ export default function AuthModal({ isOpen, onClose }) {
                     <HStack><Divider /><Text opacity={0.7}>or</Text><Divider /></HStack>
 
                     <Tabs isFitted variant="unstyled">
-                      <TabList>
-                        <Tab {...innerTabStyle}>Email</Tab>
-                        <Tab {...innerTabStyle}>Nickname</Tab>
+                      <TabList borderBottom={`1px solid ${dark}`}>
+                        <Tab sx={tabSx(true)} borderWidth="1px" borderBottom="0" roundedTop="sm">Email</Tab>
+                        <Tab sx={tabSx(false)} borderWidth="1px" borderBottom="0" roundedTop="sm" ml={2}>Nickname</Tab>
                       </TabList>
                       <TabPanels>
                         <TabPanel px={0}><EmailSignIn /></TabPanel>
@@ -241,12 +236,12 @@ export default function AuthModal({ isOpen, onClose }) {
                       </TabPanels>
                     </Tabs>
                   </VStack>
-                )}
+                </Card>
               </TabPanel>
 
               {/* SIGN UP */}
               <TabPanel px={0}>
-                {card(
+                <Card bg={panelBgSignup}>
                   <VStack align="stretch" spacing={4}>
                     <Button onClick={google} isLoading={loadingGoogle} {...buttonStyle}>
                       Continue with Google
@@ -254,9 +249,9 @@ export default function AuthModal({ isOpen, onClose }) {
                     <HStack><Divider /><Text opacity={0.7}>or</Text><Divider /></HStack>
 
                     <Tabs isFitted variant="unstyled">
-                      <TabList>
-                        <Tab {...innerTabStyle}>Email</Tab>
-                        <Tab {...innerTabStyle}>Nickname</Tab>
+                      <TabList borderBottom={`1px solid ${dark}`}>
+                        <Tab sx={tabSx(true)} borderWidth="1px" borderBottom="0" roundedTop="sm">Email</Tab>
+                        <Tab sx={tabSx(false)} borderWidth="1px" borderBottom="0" roundedTop="sm" ml={2}>Nickname</Tab>
                       </TabList>
                       <TabPanels>
                         <TabPanel px={0}><EmailSignUp /></TabPanel>
@@ -264,7 +259,7 @@ export default function AuthModal({ isOpen, onClose }) {
                       </TabPanels>
                     </Tabs>
                   </VStack>
-                )}
+                </Card>
               </TabPanel>
             </TabPanels>
           </Tabs>
