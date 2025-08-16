@@ -1,3 +1,5 @@
+//src/components/AuthModal.jsx
+
 import { useState } from 'react';
 import {
   Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody,
