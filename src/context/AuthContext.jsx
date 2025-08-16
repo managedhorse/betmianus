@@ -61,7 +61,17 @@ export default function AuthProvider({ children }) {
   }, [user, profile]);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    // Try to sign out from Supabase; then force local state reset
+    const { error } = await supabase.auth.signOut(); // local scope is fine
+    if (error) {
+      // Log for debugging; UI still resets so the user isn't stuck
+      console.error('Supabase signOut error:', error.message);
+    }
+    setSession(null);
+    setUser(null);
+    setProfile(null);
+    // If you want a full reset (e.g., to clear wallet UI), uncomment:
+    // window.location.reload();
   };
 
   return (

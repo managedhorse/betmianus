@@ -80,9 +80,9 @@ const NavLink = ({ children, href }) => (
 );
 
 const Navbar = () => {
-  const { isOpen, onOpen, onClose } = useDisclosure(); // drawer
+  const { isOpen, onOpen, onClose } = useDisclosure();           // drawer
   const { isOpen: authOpen, onOpen: openAuth, onClose: closeAuth } = useDisclosure(); // auth modal
-  const { user, profile, signOut } = useAuth(); // <-- include profile from context
+  const { user, profile, signOut } = useAuth();
 
   const { isConnected } = useAppKitAccount();
 
@@ -146,7 +146,6 @@ const Navbar = () => {
 
             <CustomConnectButton />
 
-            {/* Auth control */}
             {user ? (
               <Menu>
                 <MenuButton as={Button} variant="ghost" px={1}>
@@ -164,7 +163,13 @@ const Navbar = () => {
                   <MenuItem isDisabled>
                     {profile?.public_id ? `UID #${profile.public_id}` : 'UID pending'}
                   </MenuItem>
-                  <MenuItem onClick={signOut}>Sign out</MenuItem>
+                  <MenuItem
+                    onClick={async () => {
+                      await signOut();
+                    }}
+                  >
+                    Sign out
+                  </MenuItem>
                 </MenuList>
               </Menu>
             ) : (
