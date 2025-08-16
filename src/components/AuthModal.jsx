@@ -1,12 +1,13 @@
+// src/components/AuthModal.jsx (Chakra v2)
 import { useEffect, useState } from 'react';
 import {
   Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody,
-  Button, Input, VStack, Text, Checkbox, HStack, Divider, Box, Tabs
+  Tabs, TabList, TabPanels, Tab, TabPanel,
+  Button, Input, VStack, Text, Checkbox, HStack, Divider, Box
 } from '@chakra-ui/react';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../context/AuthContext';
 
-// tiny helper for our nickname endpoints
 async function postJSON(url, body) {
   const r = await fetch(url, {
     method: 'POST',
@@ -21,25 +22,23 @@ async function postJSON(url, body) {
 export default function AuthModal({ isOpen, onClose }) {
   const { user } = useAuth();
 
-  // close when auth succeeds
+  // Close when user becomes authenticated
   useEffect(() => {
     if (isOpen && user) onClose();
   }, [isOpen, user, onClose]);
 
+  // messaging + loading states
   const [msg, setMsg] = useState('');
-  useEffect(() => {
-    if (isOpen) setMsg('');
-  }, [isOpen]);
+  useEffect(() => { if (isOpen) setMsg(''); }, [isOpen]);
 
-  // separate loading flags
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [loadingEmailIn, setLoadingEmailIn] = useState(false);
   const [loadingEmailUp, setLoadingEmailUp] = useState(false);
   const [loadingNickIn, setLoadingNickIn] = useState(false);
   const [loadingNickUp, setLoadingNickUp] = useState(false);
 
-  // which main tab is active? (login | signup)
-  const [rootTab, setRootTab] = useState('login');
+  // which root tab (0: login, 1: signup)
+  const [rootIndex, setRootIndex] = useState(0);
 
   const google = async () => {
     setMsg('');
@@ -52,7 +51,7 @@ export default function AuthModal({ isOpen, onClose }) {
     setLoadingGoogle(false);
   };
 
-  // -------- forms ----------
+  // ---------- Forms (components) ----------
   const EmailSignIn = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -90,7 +89,6 @@ export default function AuthModal({ isOpen, onClose }) {
           access_token: session.access_token,
           refresh_token: session.refresh_token,
         });
-        // modal will close via useAuth effect
       } catch (err) {
         setMsg(err.message);
       }
@@ -110,7 +108,7 @@ export default function AuthModal({ isOpen, onClose }) {
   };
 
   const EmailSignUp = () => {
-    // NOTE: no nickname here (as requested)
+    // Email sign-up: email + password ONLY (no nickname)
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [agree, setAgree] = useState(false);
@@ -180,10 +178,22 @@ export default function AuthModal({ isOpen, onClose }) {
     );
   };
 
-  // panel styling changes with root tab to make the mode obvious
-  const panelBg = rootTab === 'login' ? 'gray.50' : 'pink.50';
-  const panelBorder = rootTab === 'login' ? 'gray.300' : 'pink.200';
-  const rootPalette = rootTab === 'login' ? 'gray' : 'pink';
+  // Style helpers to make mode obvious
+  const panelBg   = rootIndex === 0 ? 'gray.50' : 'pink.50';
+  const panelBord = rootIndex === 0 ? 'gray.300' : 'pink.200';
+  const rootScheme = rootIndex === 0 ? 'gray' : 'pink';
+
+  const tabBase = {
+    fontWeight: 'semibold',
+    borderColor: 'gray.300',
+    borderBottom: 'none',
+    borderTopRadius: 'md',
+    _selected: {
+      bg: 'white',
+      borderColor: rootIndex === 0 ? 'gray.300' : 'pink.300',
+      borderBottomColor: 'transparent',
+    },
+  };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} isCentered>
@@ -191,75 +201,78 @@ export default function AuthModal({ isOpen, onClose }) {
       <ModalContent bg="#ffbed9" color="black">
         <ModalHeader fontFamily="Slackey, cursive" textTransform="uppercase">Account</ModalHeader>
         <ModalCloseButton />
-
         <ModalBody pb={6}>
-          {/* --- MAIN TABS (Log in / Sign up) --- */}
-          <Tabs.Root
-            value={rootTab}
-            onValueChange={({ value }) => setRootTab(value)}
-            variant="outline"
-            colorPalette={rootPalette}
-            fitted
+          {/* ROOT TABS: Login / Signup */}
+          <Tabs
+            index={rootIndex}
+            onChange={setRootIndex}
+            variant="enclosed"
+            colorScheme={rootScheme}
+            isFitted
           >
-            <Tabs.List mb="4">
-              <Tabs.Trigger value="login">Log in</Tabs.Trigger>
-              <Tabs.Trigger value="signup">Sign up</Tabs.Trigger>
-              <Tabs.Indicator />
-            </Tabs.List>
+            <TabList>
+              <Tab {...tabBase}>Log in</Tab>
+              <Tab {...tabBase}>Sign up</Tab>
+            </TabList>
 
-            {/* ------- LOGIN ------- */}
-            <Tabs.Content value="login">
-              <Box bg={panelBg} borderWidth="1px" borderColor={panelBorder} rounded="lg" p="5">
+            <TabPanels
+              borderWidth="1px"
+              borderTopWidth="0"
+              borderColor={panelBord}
+              bg={panelBg}
+              p={5}
+              rounded="md"
+            >
+              {/* LOGIN */}
+              <TabPanel>
                 <VStack align="stretch" spacing={4}>
                   <Button onClick={google} isLoading={loadingGoogle} variant="outline">
                     Continue with Google
                   </Button>
-
                   <HStack align="center"><Divider /><Text opacity={0.7}>or</Text><Divider /></HStack>
 
                   {/* inner tabs */}
-                  <Tabs.Root defaultValue="email" variant="outline" colorPalette="gray">
-                    <Tabs.List mb="4">
-                      <Tabs.Trigger value="email">Email</Tabs.Trigger>
-                      <Tabs.Trigger value="nickname">Nickname</Tabs.Trigger>
-                      <Tabs.Indicator />
-                    </Tabs.List>
-                    <Tabs.Content value="email"><EmailSignIn /></Tabs.Content>
-                    <Tabs.Content value="nickname"><NicknameSignIn /></Tabs.Content>
-                  </Tabs.Root>
+                  <Tabs variant="enclosed" colorScheme="gray" isFitted>
+                    <TabList>
+                      <Tab fontWeight="semibold">Email</Tab>
+                      <Tab fontWeight="semibold">Nickname</Tab>
+                    </TabList>
+                    <TabPanels borderWidth="1px" borderTopWidth="0" borderColor="gray.300" bg="white" p={4} rounded="md">
+                      <TabPanel><EmailSignIn /></TabPanel>
+                      <TabPanel><NicknameSignIn /></TabPanel>
+                    </TabPanels>
+                  </Tabs>
                 </VStack>
-              </Box>
-            </Tabs.Content>
+              </TabPanel>
 
-            {/* ------- SIGN UP ------- */}
-            <Tabs.Content value="signup">
-              <Box bg={panelBg} borderWidth="1px" borderColor={panelBorder} rounded="lg" p="5">
+              {/* SIGN UP */}
+              <TabPanel>
                 <VStack align="stretch" spacing={4}>
                   <Button onClick={google} isLoading={loadingGoogle} variant="outline">
                     Continue with Google
                   </Button>
-
                   <HStack align="center"><Divider /><Text opacity={0.7}>or</Text><Divider /></HStack>
 
                   {/* inner tabs */}
-                  <Tabs.Root defaultValue="email" variant="outline" colorPalette="pink">
-                    <Tabs.List mb="4">
-                      <Tabs.Trigger value="email">Email</Tabs.Trigger>
-                      <Tabs.Trigger value="nickname">Nickname</Tabs.Trigger>
-                      <Tabs.Indicator />
-                    </Tabs.List>
-                    <Tabs.Content value="email"><EmailSignUp /></Tabs.Content>
-                    <Tabs.Content value="nickname"><NicknameSignUp /></Tabs.Content>
-                  </Tabs.Root>
+                  <Tabs variant="enclosed" colorScheme="pink" isFitted>
+                    <TabList>
+                      <Tab fontWeight="semibold">Email</Tab>
+                      <Tab fontWeight="semibold">Nickname</Tab>
+                    </TabList>
+                    <TabPanels borderWidth="1px" borderTopWidth="0" borderColor="pink.200" bg="white" p={4} rounded="md">
+                      <TabPanel><EmailSignUp /></TabPanel>
+                      <TabPanel><NicknameSignUp /></TabPanel>
+                    </TabPanels>
+                  </Tabs>
                 </VStack>
-              </Box>
-            </Tabs.Content>
-          </Tabs.Root>
+              </TabPanel>
+            </TabPanels>
+          </Tabs>
 
           {msg && (
-            <Text mt={3} fontSize="sm" opacity={0.9}>
-              {msg}
-            </Text>
+            <Box mt={3}>
+              <Text fontSize="sm" opacity={0.9}>{msg}</Text>
+            </Box>
           )}
         </ModalBody>
       </ModalContent>
