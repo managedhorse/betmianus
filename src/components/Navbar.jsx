@@ -145,7 +145,9 @@ const Navbar = () => {
 
             <CustomConnectButton />
 
-            {user ? (
+           {/* Auth control (force remount on user change) */}
+<React.Fragment key={user?.id || 'anon'}>
+  {user ? (
     <Menu>
       <MenuButton as={Button} variant="ghost" px={1}>
         <HStack>
@@ -161,10 +163,9 @@ const Navbar = () => {
         </MenuItem>
         <MenuItem
           onClick={async (e) => {
-            // close menu immediately for visual feedback
-            // (Chakra closes it automatically, this just guarantees it)
+            // close the menu immediately so you get visual feedback
             e.currentTarget.blur();
-            await signOut(); // this will clear state & hard-redirect
+            await signOut();
           }}
         >
           Sign out
@@ -182,6 +183,7 @@ const Navbar = () => {
       Login / Sign up
     </Button>
   )}
+</React.Fragment>
 
             <IconButton
               aria-label="Open Menu"
