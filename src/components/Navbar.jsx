@@ -1,5 +1,3 @@
-// src/components/Navbar.jsx
-
 import React from 'react';
 import {
   Box,
@@ -16,7 +14,12 @@ import {
   DrawerHeader,
   DrawerBody,
   VStack,
-  Button, Menu, MenuButton, MenuList, MenuItem, Avatar,
+  Button,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  Avatar,
 } from '@chakra-ui/react';
 import { HamburgerIcon, CloseIcon } from '@chakra-ui/icons';
 import { FaTelegram, FaXTwitter } from 'react-icons/fa6';
@@ -25,7 +28,6 @@ import { useAppKitAccount } from '@reown/appkit/react';
 import CustomConnectButton from './CustomConnectButton';
 import AuthModal from './AuthModal';
 import { useAuth } from '../context/AuthContext';
-import { supabase } from '../lib/supabaseClient';
 
 const basePinkGradient = 'linear(to-r, #FFCFEF, #FFCFEF)';
 const buttonHoverStyle = {
@@ -39,7 +41,6 @@ const buttonHoverStyle = {
     border: '2px solid #2A3335',
   },
 };
-
 
 const NavLink = ({ children, href }) => (
   <Link
@@ -79,9 +80,9 @@ const NavLink = ({ children, href }) => (
 );
 
 const Navbar = () => {
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isOpen, onOpen, onClose } = useDisclosure(); // drawer
   const { isOpen: authOpen, onOpen: openAuth, onClose: closeAuth } = useDisclosure(); // auth modal
-  const { user, signOut } = useAuth();  // from AuthProvider
+  const { user, profile, signOut } = useAuth(); // <-- include profile from context
 
   const { isConnected } = useAppKitAccount();
 
@@ -119,12 +120,7 @@ const Navbar = () => {
             </Box>
           </HStack>
 
-          <HStack
-            spacing={4}
-            flex={1}
-            justify="center"
-            display={{ base: 'none', md: 'flex' }}
-          >
+          <HStack spacing={4} flex={1} justify="center" display={{ base: 'none', md: 'flex' }}>
             {navItems.map((navItem) => (
               <NavLink key={navItem.label} href={navItem.href}>
                 {navItem.label}
@@ -133,7 +129,6 @@ const Navbar = () => {
           </HStack>
 
           <HStack spacing={4}>
-
             <HStack spacing={4} display={{ base: 'none', md: 'flex' }}>
               <Link href="https://x.com/tapmianus" isExternal>
                 <FaXTwitter size={20} color="black" />
@@ -145,24 +140,30 @@ const Navbar = () => {
 
             {isConnected && (
               <>
-                <appkit-network-button 
-                  disabled={false}
-                  size="sm" 
-                />
+                <appkit-network-button disabled={false} size="sm" />
               </>
             )}
 
             <CustomConnectButton />
+
             {/* Auth control */}
             {user ? (
               <Menu>
                 <MenuButton as={Button} variant="ghost" px={1}>
                   <HStack>
-                    <Avatar size="sm" name={user.email} />
+                    <Avatar
+                      size="sm"
+                      name={profile?.username || user?.email || 'User'}
+                    />
                   </HStack>
                 </MenuButton>
                 <MenuList>
-                  <MenuItem isDisabled>{profile ? `UID #${profile.public_id}` : user.email}</MenuItem>
+                  <MenuItem isDisabled>
+                    {profile?.username ? `@${profile.username}` : (user?.email || 'Signed in')}
+                  </MenuItem>
+                  <MenuItem isDisabled>
+                    {profile?.public_id ? `UID #${profile.public_id}` : 'UID pending'}
+                  </MenuItem>
                   <MenuItem onClick={signOut}>Sign out</MenuItem>
                 </MenuList>
               </Menu>
@@ -195,7 +196,8 @@ const Navbar = () => {
           </HStack>
         </Flex>
       </Box>
-{/* Auth modal */}
+
+      {/* Auth modal */}
       <AuthModal isOpen={authOpen} onClose={closeAuth} />
 
       <Drawer placement="right" onClose={onClose} isOpen={isOpen}>

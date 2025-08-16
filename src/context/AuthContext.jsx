@@ -1,4 +1,3 @@
-// src/context/AuthContext.jsx
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
@@ -11,18 +10,21 @@ export default function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null);
   const [authReady, setAuthReady] = useState(false);
 
-  // helper to load profile
   const loadProfile = async (userId) => {
-    const { data: p } = await supabase
-      .from('profiles')
-      .select('username, public_id')
-      .eq('id', userId)
-      .single();
-    setProfile(p ?? null);
+    try {
+      const { data: p } = await supabase
+        .from('profiles')
+        .select('username, public_id')
+        .eq('id', userId)
+        .single();
+      setProfile(p ?? null);
+    } catch {
+      setProfile(null);
+    }
   };
 
   useEffect(() => {
-    // 1) initial session
+    // Initial session
     supabase.auth.getSession().then(async ({ data }) => {
       setSession(data.session ?? null);
       setUser(data.session?.user ?? null);
@@ -32,7 +34,7 @@ export default function AuthProvider({ children }) {
       setAuthReady(true);
     });
 
-    // 2) listen for changes (note the async callback)
+    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, sess) => {
         setSession(sess ?? null);
@@ -48,7 +50,19 @@ export default function AuthProvider({ children }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signOut = async () => { await supabase.auth.signOut(); };
+  // Tiny retry if user exists but profile not yet created by trigger
+  useEffect(() => {
+    if (user && !profile) {
+      const t = setTimeout(() => {
+        loadProfile(user.id);
+      }, 800);
+      return () => clearTimeout(t);
+    }
+  }, [user, profile]);
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+  };
 
   return (
     <AuthCtx.Provider value={{ session, user, profile, authReady, signOut }}>
