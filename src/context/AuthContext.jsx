@@ -61,17 +61,25 @@ export default function AuthProvider({ children }) {
   }, [user, profile]);
 
   const signOut = async () => {
-    // Try to sign out from Supabase; then force local state reset
-    const { error } = await supabase.auth.signOut(); // local scope is fine
-    if (error) {
-      // Log for debugging; UI still resets so the user isn't stuck
-      console.error('Supabase signOut error:', error.message);
+    try {
+      // Revoke refresh token everywhere and remove local session
+      const { error } = await supabase.auth.signOut({ scope: 'global' });
+      if (error) console.error('Supabase signOut error:', error.message);
+    } finally {
+      // Extra cleanup in case anything is lingering
+      try {
+        Object.keys(localStorage).forEach((k) => {
+          // Supabase stores auth under keys like "sb-<ref>-auth-token" (and -persist-session)
+          if (k.startsWith('sb-')) localStorage.removeItem(k);
+        });
+      } catch {}
+      setSession(null);
+      setUser(null);
+      setProfile(null);
+
+      // Hard redirect guarantees UI reset (safe for SPA)
+      window.location.href = '/';
     }
-    setSession(null);
-    setUser(null);
-    setProfile(null);
-    // If you want a full reset (e.g., to clear wallet UI), uncomment:
-    // window.location.reload();
   };
 
   return (

@@ -83,7 +83,6 @@ const Navbar = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();           // drawer
   const { isOpen: authOpen, onOpen: openAuth, onClose: closeAuth } = useDisclosure(); // auth modal
   const { user, profile, signOut } = useAuth();
-
   const { isConnected } = useAppKitAccount();
 
   const navItems = [
