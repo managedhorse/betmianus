@@ -248,26 +248,22 @@ export default function AuthModal({ isOpen, onClose }) {
 
     // 1) PRE-CHECK on the server — block if email already exists for any provider
     try {
-      const check = await postJSON('/api/check-email', { email });
-      if (check.exists) {
-        setExistingEmail(email);
-        setExistingProviders(check.providers || []);
-        if ((check.providers || []).includes('email')) {
-          // Already has email/password
-          setMsg('That email is already registered. Log in or reset your password.');
-        } else if ((check.providers || []).includes('google')) {
-          // Google-only account
-          setMsg('That email is already used with Google. Sign in with Google, or set a password for it.');
-        } else {
-          setMsg('That email is already in use.');
-        }
-        return; // <- DO NOT call signUp()
-      }
-    } catch (err) {
-      // If the check fails for some reason, fall back to existing behavior or show an error:
-      setMsg('Could not verify email. Please try again.');
-      return;
-    }
+  const check = await postJSON('/api/check-email', { email });
+  if (check.exists) {
+    setExistingEmail(email);
+    const prov = check.providers || [];
+    setExistingProviders(prov);
+
+    // Your rule: block and show a single message
+    setMsg('That email is already in use.');
+
+    // Do NOT proceed to signUp()
+    return;
+  }
+} catch (err) {
+  setMsg('Could not verify email. Please try again.');
+  return;
+}
 
     // 2) Safe to create the email/password account
     setLoadingEmailUp(true);
@@ -334,37 +330,33 @@ export default function AuthModal({ isOpen, onClose }) {
 
         {/* Shown when we blocked because the email already exists */}
         {existingEmail && !pendingEmail && (
-          <Box fontSize="sm" color="gray.700">
-            <VStack align="start" spacing={2} mt={2}>
-              {existingProviders.includes('email') && (
-                <Button
-                  size="sm"
-                  variant="link"
-                  onClick={() => supabase.auth.resetPasswordForEmail(existingEmail, { redirectTo: window.location.origin })}
-                  isLoading={loadingSetPwLink}
-                >
-                  Send password reset link to {existingEmail}
-                </Button>
-              )}
-              {existingProviders.includes('google') && (
-                <Button
-                  size="sm"
-                  variant="link"
-                  onClick={() => sendPasswordSetupLink(existingEmail)}
-                  isLoading={loadingSetPwLink}
-                >
-                  Send password set link to {existingEmail}
-                </Button>
-              )}
-              {existingProviders.includes('google') && (
-                <Text>
-                  Or sign in with{' '}
-                  <Link onClick={google} textDecoration="underline">Google</Link>.
-                </Text>
-              )}
-            </VStack>
-          </Box>
-        )}
+  <Box fontSize="sm" color="gray.700">
+    <VStack align="start" spacing={2} mt={2}>
+      {/* If the account already has email/password, give them reset */}
+      {existingProviders.includes('email') && (
+        <Button
+          size="sm"
+          variant="link"
+          onClick={() =>
+            supabase.auth.resetPasswordForEmail(existingEmail, {
+              redirectTo: window.location.origin,
+            })
+          }
+          isLoading={loadingSetPwLink}
+        >
+          Reset password for {existingEmail}
+        </Button>
+      )}
+
+      {/* If the account is Google, only offer Google sign-in */}
+      {existingProviders.includes('google') && (
+        <Button size="sm" variant="link" onClick={google}>
+          Continue with Google
+        </Button>
+      )}
+    </VStack>
+  </Box>
+)}
       </VStack>
     </form>
   );
