@@ -1,4 +1,4 @@
-// src/components/AuthModal.jsx (Chakra v2)
+// src/components/AuthModal.jsx  (Chakra v2)
 import { useEffect, useState } from 'react';
 import {
   Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody,
@@ -22,12 +22,9 @@ async function postJSON(url, body) {
 export default function AuthModal({ isOpen, onClose }) {
   const { user } = useAuth();
 
-  // Close when user becomes authenticated
-  useEffect(() => {
-    if (isOpen && user) onClose();
-  }, [isOpen, user, onClose]);
+  // Auto-close when signed in
+  useEffect(() => { if (isOpen && user) onClose(); }, [isOpen, user, onClose]);
 
-  // messaging + loading states
   const [msg, setMsg] = useState('');
   useEffect(() => { if (isOpen) setMsg(''); }, [isOpen]);
 
@@ -37,7 +34,6 @@ export default function AuthModal({ isOpen, onClose }) {
   const [loadingNickIn, setLoadingNickIn] = useState(false);
   const [loadingNickUp, setLoadingNickUp] = useState(false);
 
-  // which root tab (0: login, 1: signup)
   const [rootIndex, setRootIndex] = useState(0);
 
   const google = async () => {
@@ -51,7 +47,7 @@ export default function AuthModal({ isOpen, onClose }) {
     setLoadingGoogle(false);
   };
 
-  // ---------- Forms (components) ----------
+  // ---------- Forms ----------
   const EmailSignIn = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -66,10 +62,28 @@ export default function AuthModal({ isOpen, onClose }) {
     return (
       <form onSubmit={submit}>
         <VStack align="stretch" spacing={3}>
-          <Input type="email" placeholder="Email" value={email}
-                 onChange={(e) => setEmail(e.target.value)} required />
-          <Input type="password" placeholder="Password" value={password}
-                 onChange={(e) => setPassword(e.target.value)} required />
+          <Input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            bg="white"
+            borderColor="gray.400"
+            _placeholder={{ color: 'gray.500' }}
+            _focus={{ borderColor: 'gray.700', boxShadow: 'none' }}
+          />
+          <Input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            bg="white"
+            borderColor="gray.400"
+            _placeholder={{ color: 'gray.500' }}
+            _focus={{ borderColor: 'gray.700', boxShadow: 'none' }}
+          />
           <Button type="submit" isLoading={loadingEmailIn}>Log in</Button>
         </VStack>
       </form>
@@ -97,18 +111,35 @@ export default function AuthModal({ isOpen, onClose }) {
     return (
       <form onSubmit={submit}>
         <VStack align="stretch" spacing={3}>
-          <Input placeholder="Nickname" value={username}
-                 onChange={(e) => setUsername(e.target.value)} required />
-          <Input type="password" placeholder="Password" value={password}
-                 onChange={(e) => setPassword(e.target.value)} required />
+          <Input
+            placeholder="Nickname"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+            bg="white"
+            borderColor="gray.400"
+            _placeholder={{ color: 'gray.500' }}
+            _focus={{ borderColor: 'gray.700', boxShadow: 'none' }}
+          />
+          <Input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            bg="white"
+            borderColor="gray.400"
+            _placeholder={{ color: 'gray.500' }}
+            _focus={{ borderColor: 'gray.700', boxShadow: 'none' }}
+          />
           <Button type="submit" isLoading={loadingNickIn}>Log in with nickname</Button>
         </VStack>
       </form>
     );
   };
 
+  // Email sign-up: email + password only
   const EmailSignUp = () => {
-    // Email sign-up: email + password ONLY (no nickname)
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [agree, setAgree] = useState(false);
@@ -128,10 +159,28 @@ export default function AuthModal({ isOpen, onClose }) {
     return (
       <form onSubmit={submit}>
         <VStack align="stretch" spacing={3}>
-          <Input type="email" placeholder="Email" value={email}
-                 onChange={(e) => setEmail(e.target.value)} required />
-          <Input type="password" placeholder="Password" value={password}
-                 onChange={(e) => setPassword(e.target.value)} required />
+          <Input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            bg="white"
+            borderColor="gray.400"
+            _placeholder={{ color: 'gray.500' }}
+            _focus={{ borderColor: 'gray.700', boxShadow: 'none' }}
+          />
+          <Input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            bg="white"
+            borderColor="gray.400"
+            _placeholder={{ color: 'gray.500' }}
+            _focus={{ borderColor: 'gray.700', boxShadow: 'none' }}
+          />
           <Checkbox isChecked={agree} onChange={(e) => setAgree(e.target.checked)}>
             I am 18+ and accept the Terms & Risk Policy
           </Checkbox>
@@ -165,10 +214,27 @@ export default function AuthModal({ isOpen, onClose }) {
     return (
       <form onSubmit={submit}>
         <VStack align="stretch" spacing={3}>
-          <Input placeholder="Nickname (3–20 letters/numbers/_)" value={username}
-                 onChange={(e) => setUsername(e.target.value)} required />
-          <Input type="password" placeholder="Password" value={password}
-                 onChange={(e) => setPassword(e.target.value)} required />
+          <Input
+            placeholder="Nickname (3–20 letters/numbers/_)"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+            bg="white"
+            borderColor="gray.400"
+            _placeholder={{ color: 'gray.500' }}
+            _focus={{ borderColor: 'gray.700', boxShadow: 'none' }}
+          />
+          <Input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            bg="white"
+            borderColor="gray.400"
+            _placeholder={{ color: 'gray.500' }}
+            _focus={{ borderColor: 'gray.700', boxShadow: 'none' }}
+          />
           <Checkbox isChecked={agree} onChange={(e) => setAgree(e.target.checked)}>
             I am 18+ and accept the Terms & Risk Policy
           </Checkbox>
@@ -178,90 +244,109 @@ export default function AuthModal({ isOpen, onClose }) {
     );
   };
 
-  // Style helpers to make mode obvious
-  const panelBg   = rootIndex === 0 ? 'gray.50' : 'pink.50';
-  const panelBord = rootIndex === 0 ? 'gray.300' : 'pink.200';
-  const rootScheme = rootIndex === 0 ? 'gray' : 'pink';
-
-  const tabBase = {
+  // Root tabs: no colored strokes, no focus ring; clear active/inactive
+  const tabClean = {
     fontWeight: 'semibold',
-    borderColor: 'gray.300',
-    borderBottom: 'none',
-    borderTopRadius: 'md',
-    _selected: {
-      bg: 'white',
-      borderColor: rootIndex === 0 ? 'gray.300' : 'pink.300',
-      borderBottomColor: 'transparent',
-    },
+    bg: 'transparent',
+    color: 'gray.700',
+    border: '0',
+    roundedTop: 'md',
+    _hover: { bg: 'gray.100' },
+    _selected: { bg: 'white', color: 'gray.900' },
+    _focus: { boxShadow: 'none' },
+    _focusVisible: { boxShadow: 'none', outline: 'none' },
   };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} isCentered>
       <ModalOverlay />
       <ModalContent bg="#ffbed9" color="black">
-        <ModalHeader fontFamily="Slackey, cursive" textTransform="uppercase">Account</ModalHeader>
+        <ModalHeader fontFamily="Slackey, cursive" textTransform="uppercase">
+          Account
+        </ModalHeader>
         <ModalCloseButton />
+
         <ModalBody pb={6}>
-          {/* ROOT TABS: Login / Signup */}
           <Tabs
             index={rootIndex}
             onChange={setRootIndex}
             variant="enclosed"
-            colorScheme={rootScheme}
             isFitted
           >
-            <TabList>
-              <Tab {...tabBase}>Log in</Tab>
-              <Tab {...tabBase}>Sign up</Tab>
+            <TabList border="0" mb={0}>
+              <Tab {...tabClean}>Log in</Tab>
+              <Tab {...tabClean}>Sign up</Tab>
             </TabList>
 
+            {/* High-contrast, white content card */}
             <TabPanels
               borderWidth="1px"
-              borderTopWidth="0"
-              borderColor={panelBord}
-              bg={panelBg}
-              p={5}
+              borderColor="gray.300"
               rounded="md"
+              bg="white"
+              p={5}
+              mt={0}
             >
-              {/* LOGIN */}
               <TabPanel>
                 <VStack align="stretch" spacing={4}>
-                  <Button onClick={google} isLoading={loadingGoogle} variant="outline">
+                  <Button
+                    onClick={google}
+                    isLoading={loadingGoogle}
+                    variant="outline"
+                    borderColor="gray.400"
+                    _hover={{ bg: 'gray.50' }}
+                    _focus={{ boxShadow: 'none' }}
+                  >
                     Continue with Google
                   </Button>
-                  <HStack align="center"><Divider /><Text opacity={0.7}>or</Text><Divider /></HStack>
 
-                  {/* inner tabs */}
-                  <Tabs variant="enclosed" colorScheme="gray" isFitted>
+                  <HStack align="center">
+                    <Divider />
+                    <Text color="gray.600">or</Text>
+                    <Divider />
+                  </HStack>
+
+                  {/* inner tabs: subtle underline indicator */}
+                  <Tabs variant="line" colorScheme="gray" isFitted>
                     <TabList>
-                      <Tab fontWeight="semibold">Email</Tab>
-                      <Tab fontWeight="semibold">Nickname</Tab>
+                      <Tab fontWeight="semibold" _focus={{ boxShadow: 'none' }}>Email</Tab>
+                      <Tab fontWeight="semibold" _focus={{ boxShadow: 'none' }}>Nickname</Tab>
                     </TabList>
-                    <TabPanels borderWidth="1px" borderTopWidth="0" borderColor="gray.300" bg="white" p={4} rounded="md">
-                      <TabPanel><EmailSignIn /></TabPanel>
-                      <TabPanel><NicknameSignIn /></TabPanel>
+                    <TabPanels pt={4}>
+                      <TabPanel px={0}><EmailSignIn /></TabPanel>
+                      <TabPanel px={0}><NicknameSignIn /></TabPanel>
                     </TabPanels>
                   </Tabs>
                 </VStack>
               </TabPanel>
 
-              {/* SIGN UP */}
               <TabPanel>
                 <VStack align="stretch" spacing={4}>
-                  <Button onClick={google} isLoading={loadingGoogle} variant="outline">
+                  <Button
+                    onClick={google}
+                    isLoading={loadingGoogle}
+                    variant="outline"
+                    borderColor="gray.400"
+                    _hover={{ bg: 'gray.50' }}
+                    _focus={{ boxShadow: 'none' }}
+                  >
                     Continue with Google
                   </Button>
-                  <HStack align="center"><Divider /><Text opacity={0.7}>or</Text><Divider /></HStack>
 
-                  {/* inner tabs */}
-                  <Tabs variant="enclosed" colorScheme="pink" isFitted>
+                  <HStack align="center">
+                    <Divider />
+                    <Text color="gray.600">or</Text>
+                    <Divider />
+                  </HStack>
+
+                  <Tabs variant="line" colorScheme="gray" isFitted>
                     <TabList>
-                      <Tab fontWeight="semibold">Email</Tab>
-                      <Tab fontWeight="semibold">Nickname</Tab>
+                      <Tab fontWeight="semibold" _focus={{ boxShadow: 'none' }}>Email</Tab>
+                      <Tab fontWeight="semibold" _focus={{ boxShadow: 'none' }}>Nickname</Tab>
                     </TabList>
-                    <TabPanels borderWidth="1px" borderTopWidth="0" borderColor="pink.200" bg="white" p={4} rounded="md">
-                      <TabPanel><EmailSignUp /></TabPanel>
-                      <TabPanel><NicknameSignUp /></TabPanel>
+                    <TabPanels pt={4}>
+                      <TabPanel px={0}><EmailSignUp /></TabPanel>
+                      <TabPanel px={0}><NicknameSignUp /></TabPanel>
                     </TabPanels>
                   </Tabs>
                 </VStack>
@@ -271,7 +356,7 @@ export default function AuthModal({ isOpen, onClose }) {
 
           {msg && (
             <Box mt={3}>
-              <Text fontSize="sm" opacity={0.9}>{msg}</Text>
+              <Text fontSize="sm" color="gray.800">{msg}</Text>
             </Box>
           )}
         </ModalBody>
