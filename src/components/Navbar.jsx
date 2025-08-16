@@ -161,15 +161,7 @@ const Navbar = () => {
         <MenuItem isDisabled>
           {profile?.public_id ? `UID #${profile.public_id}` : 'UID pending'}
         </MenuItem>
-        <MenuItem
-          onClick={async (e) => {
-            // close the menu immediately so you get visual feedback
-            e.currentTarget.blur();
-            await signOut();
-          }}
-        >
-          Sign out
-        </MenuItem>
+        <MenuItem as="a" href="/logout">Sign out</MenuItem>
       </MenuList>
     </Menu>
   ) : (

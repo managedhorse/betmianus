@@ -1,3 +1,4 @@
+// src/pages/Logout.jsx
 import { useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 
