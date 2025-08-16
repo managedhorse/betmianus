@@ -1,52 +1,60 @@
-//src/components/AuthModal.jsx
+// src/components/AuthModal.jsx
 import { useEffect, useState } from 'react';
 import {
   Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody,
   Tabs, TabList, TabPanels, Tab, TabPanel,
-  Button, Input, VStack, Text, Checkbox, HStack, Divider
+  Button, Input, VStack, Text, Checkbox, HStack, Divider, Box
 } from '@chakra-ui/react';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../context/AuthContext';
 
+// tiny helper
 async function postJSON(url, body) {
   const r = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    body: JSON.stringify(body)
   });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(j.error || 'Request failed');
   return j;
 }
 
+// shared input style (less pink, clear borders)
+const inputStyle = {
+  bg: 'white',
+  border: '2px solid #2A3335',
+  _focus: { borderColor: '#FF6F91', boxShadow: 'none' },
+};
+
+const buttonStyle = {
+  bg: 'white',
+  border: '2px solid #2A3335',
+  _hover: { bg: 'gray.50', transform: 'translateY(-1px)' },
+};
+
 export default function AuthModal({ isOpen, onClose }) {
   const { user } = useAuth();
 
-  // Close the modal any time we detect a signed-in user
-  useEffect(() => {
-    if (isOpen && user) onClose();
-  }, [isOpen, user, onClose]);
+  // Close when signed in
+  useEffect(() => { if (isOpen && user) onClose(); }, [isOpen, user, onClose]);
 
-  // Clear messages whenever the modal opens
   const [msg, setMsg] = useState('');
-  useEffect(() => {
-    if (isOpen) setMsg('');
-  }, [isOpen]);
+  useEffect(() => { if (isOpen) setMsg(''); }, [isOpen]);
 
-  // Individual loading flags so controls don’t all spin at once
+  // individual spinners
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [loadingEmailIn, setLoadingEmailIn] = useState(false);
   const [loadingEmailUp, setLoadingEmailUp] = useState(false);
   const [loadingNickIn, setLoadingNickIn] = useState(false);
   const [loadingNickUp, setLoadingNickUp] = useState(false);
 
-  // ---------- Actions ----------
   const google = async () => {
     setMsg('');
     setLoadingGoogle(true);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin },
+      options: { redirectTo: window.location.origin }
     });
     if (error) setMsg(error.message);
     setLoadingGoogle(false);
@@ -67,9 +75,9 @@ export default function AuthModal({ isOpen, onClose }) {
     return (
       <form onSubmit={submit}>
         <VStack align="stretch" spacing={3}>
-          <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-          <Button type="submit" isLoading={loadingEmailIn}>Log in</Button>
+          <Input type="email" placeholder="Email" value={email} onChange={(e)=>setEmail(e.target.value)} required {...inputStyle}/>
+          <Input type="password" placeholder="Password" value={password} onChange={(e)=>setPassword(e.target.value)} required {...inputStyle}/>
+          <Button type="submit" isLoading={loadingEmailIn} {...buttonStyle}>Log in</Button>
         </VStack>
       </form>
     );
@@ -86,9 +94,9 @@ export default function AuthModal({ isOpen, onClose }) {
         const session = await postJSON('/api/login-username', { username, password });
         await supabase.auth.setSession({
           access_token: session.access_token,
-          refresh_token: session.refresh_token,
+          refresh_token: session.refresh_token
         });
-        // onAuthStateChange will close the modal
+        // onAuthStateChange closes modal
       } catch (err) {
         setMsg(err.message);
       }
@@ -97,16 +105,16 @@ export default function AuthModal({ isOpen, onClose }) {
     return (
       <form onSubmit={submit}>
         <VStack align="stretch" spacing={3}>
-          <Input placeholder="Nickname" value={username} onChange={(e) => setUsername(e.target.value)} required />
-          <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-          <Button type="submit" isLoading={loadingNickIn}>Log in with nickname</Button>
+          <Input placeholder="Nickname" value={username} onChange={(e)=>setUsername(e.target.value)} required {...inputStyle}/>
+          <Input type="password" placeholder="Password" value={password} onChange={(e)=>setPassword(e.target.value)} required {...inputStyle}/>
+          <Button type="submit" isLoading={loadingNickIn} {...buttonStyle}>Log in with nickname</Button>
         </VStack>
       </form>
     );
   };
 
+  // EMAIL SIGN UP: email + password ONLY (nickname optional/hidden)
   const EmailSignUp = () => {
-    const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [agree, setAgree] = useState(false);
@@ -117,23 +125,22 @@ export default function AuthModal({ isOpen, onClose }) {
       if (!agree) { setMsg('Please confirm you are 18+ and accept the Terms.'); return; }
       setLoadingEmailUp(true);
       const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { data: { username }, emailRedirectTo: window.location.origin },
+        email, password,
+        options: { emailRedirectTo: window.location.origin }
       });
       setMsg(error ? error.message : 'Check your email to confirm your account.');
       setLoadingEmailUp(false);
     };
+
     return (
       <form onSubmit={submit}>
         <VStack align="stretch" spacing={3}>
-          <Input placeholder="Nickname (public)" value={username} onChange={(e) => setUsername(e.target.value)} />
-          <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-          <Checkbox isChecked={agree} onChange={(e) => setAgree(e.target.checked)}>
+          <Input type="email" placeholder="Email" value={email} onChange={(e)=>setEmail(e.target.value)} required {...inputStyle}/>
+          <Input type="password" placeholder="Password" value={password} onChange={(e)=>setPassword(e.target.value)} required {...inputStyle}/>
+          <Checkbox isChecked={agree} onChange={(e)=>setAgree(e.target.checked)}>
             I am 18+ and accept the Terms & Risk Policy
           </Checkbox>
-          <Button type="submit" isLoading={loadingEmailUp}>Create account</Button>
+          <Button type="submit" isLoading={loadingEmailUp} {...buttonStyle}>Create account</Button>
         </VStack>
       </form>
     );
@@ -165,76 +172,104 @@ export default function AuthModal({ isOpen, onClose }) {
     return (
       <form onSubmit={submit}>
         <VStack align="stretch" spacing={3}>
-          <Input placeholder="Nickname (3–20 letters/numbers/_)" value={username} onChange={(e) => setUsername(e.target.value)} required />
-          <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-          <Checkbox isChecked={agree} onChange={(e) => setAgree(e.target.checked)}>
+          <Input placeholder="Nickname (3–20 letters/numbers/_)" value={username} onChange={(e)=>setUsername(e.target.value)} required {...inputStyle}/>
+          <Input type="password" placeholder="Password" value={password} onChange={(e)=>setPassword(e.target.value)} required {...inputStyle}/>
+          <Checkbox isChecked={agree} onChange={(e)=>setAgree(e.target.checked)}>
             I am 18+ and accept the Terms & Risk Policy
           </Checkbox>
-          <Button type="submit" isLoading={loadingNickUp}>Create nickname account</Button>
+          <Button type="submit" isLoading={loadingNickUp} {...buttonStyle}>Create nickname account</Button>
         </VStack>
       </form>
     );
   };
 
+  // Nice-looking tabs (actual tabs, not pink pills)
+  const tabStyle = {
+    border: '2px solid #2A3335',
+    borderBottomWidth: '0',
+    bg: '#ffe3ef',
+    _selected: { bg: 'white', color: 'black', borderColor: '#2A3335' },
+    fontWeight: 'semibold',
+    roundedTop: 'md',
+  };
+
+  const innerTabStyle = {
+    border: '1px solid #2A3335',
+    borderBottomWidth: '0',
+    bg: 'white',
+    _selected: { bg: 'white', color: 'black', borderColor: '#2A3335' },
+    roundedTop: 'sm',
+    fontWeight: 'semibold',
+  };
+
+  const card = (children) => (
+    <Box border="2px solid #2A3335" rounded="md" p={4} bg="#ffeef5">
+      {children}
+    </Box>
+  );
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} isCentered>
       <ModalOverlay />
       <ModalContent bg="#ffbed9" color="black">
-        <ModalHeader fontFamily="Slackey, cursive" textTransform="uppercase">
-          Account
-        </ModalHeader>
+        <ModalHeader fontFamily="Slackey, cursive" textTransform="uppercase">Account</ModalHeader>
         <ModalCloseButton />
         <ModalBody pb={6}>
-          <Tabs isFitted variant="enclosed">
-            <TabList>
-              <Tab>Log in</Tab>
-              <Tab>Sign up</Tab>
+          <Tabs isFitted variant="unstyled">
+            <TabList mb={0}>
+              <Tab {...tabStyle}>Log in</Tab>
+              <Tab {...tabStyle}>Sign up</Tab>
             </TabList>
-
             <TabPanels>
-              {/* ----------- LOG IN ----------- */}
-              <TabPanel>
-                <VStack align="stretch" spacing={4}>
-                  <Button onClick={google} isLoading={loadingGoogle} variant="outline">
-                    Continue with Google
-                  </Button>
+              {/* LOG IN */}
+              <TabPanel px={0}>
+                {card(
+                  <VStack align="stretch" spacing={4}>
+                    <Button onClick={google} isLoading={loadingGoogle} {...buttonStyle}>
+                      Continue with Google
+                    </Button>
+                    <HStack><Divider /><Text opacity={0.7}>or</Text><Divider /></HStack>
 
-                  <HStack align="center"><Divider /><Text opacity={0.7}>or</Text><Divider /></HStack>
-
-                  <Tabs isFitted variant="soft-rounded" colorScheme="pink">
-                    <TabList>
-                      <Tab>Email</Tab>
-                      <Tab>Nickname</Tab>
-                    </TabList>
-                    <TabPanels>
-                      <TabPanel><EmailSignIn /></TabPanel>
-                      <TabPanel><NicknameSignIn /></TabPanel>
-                    </TabPanels>
-                  </Tabs>
-                </VStack>
+                    <Tabs isFitted variant="unstyled">
+                      <TabList>
+                        <Tab {...innerTabStyle}>Email</Tab>
+                        <Tab {...innerTabStyle}>Nickname</Tab>
+                      </TabList>
+                      <TabPanels>
+                        <TabPanel px={0}><EmailSignIn /></TabPanel>
+                        <TabPanel px={0}><NicknameSignIn /></TabPanel>
+                      </TabPanels>
+                    </Tabs>
+                  </VStack>
+                )}
               </TabPanel>
 
-              {/* ----------- SIGN UP ----------- */}
-              <TabPanel>
-                <Tabs isFitted variant="soft-rounded" colorScheme="pink">
-                  <TabList>
-                    <Tab>Email</Tab>
-                    <Tab>Nickname</Tab>
-                  </TabList>
-                  <TabPanels>
-                    <TabPanel><EmailSignUp /></TabPanel>
-                    <TabPanel><NicknameSignUp /></TabPanel>
-                  </TabPanels>
-                </Tabs>
+              {/* SIGN UP */}
+              <TabPanel px={0}>
+                {card(
+                  <VStack align="stretch" spacing={4}>
+                    <Button onClick={google} isLoading={loadingGoogle} {...buttonStyle}>
+                      Continue with Google
+                    </Button>
+                    <HStack><Divider /><Text opacity={0.7}>or</Text><Divider /></HStack>
+
+                    <Tabs isFitted variant="unstyled">
+                      <TabList>
+                        <Tab {...innerTabStyle}>Email</Tab>
+                        <Tab {...innerTabStyle}>Nickname</Tab>
+                      </TabList>
+                      <TabPanels>
+                        <TabPanel px={0}><EmailSignUp /></TabPanel>
+                        <TabPanel px={0}><NicknameSignUp /></TabPanel>
+                      </TabPanels>
+                    </Tabs>
+                  </VStack>
+                )}
               </TabPanel>
             </TabPanels>
           </Tabs>
 
-          {msg && (
-            <Text mt={3} fontSize="sm" opacity={0.9}>
-              {msg}
-            </Text>
-          )}
+          {msg && <Text mt={3} fontSize="sm" opacity={0.9}>{msg}</Text>}
         </ModalBody>
       </ModalContent>
     </Modal>
