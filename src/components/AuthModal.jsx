@@ -1,12 +1,49 @@
 // src/components/AuthModal.jsx
 import { useEffect, useState } from 'react';
 import {
-  Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody,
-  Tabs, TabList, TabPanels, Tab, TabPanel,
-  Button, Input, VStack, Text, Checkbox, HStack, Divider
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalCloseButton,
+  ModalBody,
+  Tabs,
+  TabList,
+  TabPanels,
+  Tab,
+  TabPanel,
+  Button,
+  Input,
+  VStack,
+  Text,
+  Checkbox,
+  HStack,
+  Divider,
 } from '@chakra-ui/react';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../context/AuthContext';
+
+// Binder-style tab: selected tab visually fuses with the card below it
+const binderTab = {
+  px: 4,
+  py: 2,
+  fontWeight: 'semibold',
+  color: 'gray.600',
+  bg: 'transparent',
+  border: '1px solid',
+  borderColor: 'transparent',
+  borderBottom: 'none',
+  borderTopRadius: 'md',
+  _hover: { bg: 'gray.50', color: 'gray.800' },
+  _focus: { boxShadow: 'none' },
+  _selected: {
+    color: 'gray.900',
+    bg: 'white',
+    borderColor: 'gray.300',
+    borderBottomColor: 'white', // fuse with panel
+    mb: '-1px',                 // overlap the panel’s top border by 1px
+  },
+};
 
 async function postJSON(url, body) {
   const r = await fetch(url, {
@@ -22,20 +59,24 @@ async function postJSON(url, body) {
 export default function AuthModal({ isOpen, onClose }) {
   const { user } = useAuth();
 
-  // Auto-close when signed in
-  useEffect(() => { if (isOpen && user) onClose(); }, [isOpen, user, onClose]);
+  // Close when user becomes signed in
+  useEffect(() => {
+    if (isOpen && user) onClose();
+  }, [isOpen, user, onClose]);
 
   const [msg, setMsg] = useState('');
-  useEffect(() => { if (isOpen) setMsg(''); }, [isOpen]);
+  useEffect(() => {
+    if (isOpen) setMsg('');
+  }, [isOpen]);
 
-  // per-action loaders
+  // Per-action loaders
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [loadingEmailIn, setLoadingEmailIn] = useState(false);
   const [loadingNickIn, setLoadingNickIn] = useState(false);
   const [loadingEmailUp, setLoadingEmailUp] = useState(false);
   const [loadingNickUp, setLoadingNickUp] = useState(false);
 
-  // ---------- actions ----------
+  // ----- Actions -----
   const google = async () => {
     setMsg('');
     setLoadingGoogle(true);
@@ -47,7 +88,7 @@ export default function AuthModal({ isOpen, onClose }) {
     setLoadingGoogle(false);
   };
 
-  // ---------- forms ----------
+  // ----- Forms -----
   const EmailSignIn = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -84,7 +125,9 @@ export default function AuthModal({ isOpen, onClose }) {
             _placeholder={{ color: 'gray.500' }}
             _focus={{ borderColor: 'gray.700', boxShadow: 'none' }}
           />
-          <Button type="submit" isLoading={loadingEmailIn}>Log in</Button>
+          <Button type="submit" isLoading={loadingEmailIn}>
+            Log in
+          </Button>
         </VStack>
       </form>
     );
@@ -132,13 +175,15 @@ export default function AuthModal({ isOpen, onClose }) {
             _placeholder={{ color: 'gray.500' }}
             _focus={{ borderColor: 'gray.700', boxShadow: 'none' }}
           />
-          <Button type="submit" isLoading={loadingNickIn}>Log in with nickname</Button>
+          <Button type="submit" isLoading={loadingNickIn}>
+            Log in with nickname
+          </Button>
         </VStack>
       </form>
     );
   };
 
-  // Email sign-up: NO nickname
+  // Email sign-up (no nickname)
   const EmailSignUp = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -146,7 +191,10 @@ export default function AuthModal({ isOpen, onClose }) {
     const submit = async (e) => {
       e.preventDefault();
       setMsg('');
-      if (!agree) { setMsg('Please confirm you are 18+ and accept the Terms.'); return; }
+      if (!agree) {
+        setMsg('Please confirm you are 18+ and accept the Terms.');
+        return;
+      }
       setLoadingEmailUp(true);
       const { error } = await supabase.auth.signUp({
         email,
@@ -184,7 +232,9 @@ export default function AuthModal({ isOpen, onClose }) {
           <Checkbox isChecked={agree} onChange={(e) => setAgree(e.target.checked)}>
             I am 18+ and accept the Terms & Risk Policy
           </Checkbox>
-          <Button type="submit" isLoading={loadingEmailUp}>Create account</Button>
+          <Button type="submit" isLoading={loadingEmailUp}>
+            Create account
+          </Button>
         </VStack>
       </form>
     );
@@ -197,7 +247,10 @@ export default function AuthModal({ isOpen, onClose }) {
     const submit = async (e) => {
       e.preventDefault();
       setMsg('');
-      if (!agree) { setMsg('Please confirm you are 18+ and accept the Terms.'); return; }
+      if (!agree) {
+        setMsg('Please confirm you are 18+ and accept the Terms.');
+        return;
+      }
       if (!/^[A-Za-z0-9_]{3,20}$/.test(username)) {
         setMsg('Nickname must be 3–20 characters: letters, numbers, underscore.');
         return;
@@ -238,33 +291,17 @@ export default function AuthModal({ isOpen, onClose }) {
           <Checkbox isChecked={agree} onChange={(e) => setAgree(e.target.checked)}>
             I am 18+ and accept the Terms & Risk Policy
           </Checkbox>
-          <Button type="submit" isLoading={loadingNickUp}>Create nickname account</Button>
+          <Button type="submit" isLoading={loadingNickUp}>
+            Create nickname account
+          </Button>
         </VStack>
       </form>
     );
   };
 
-  // Root tabs: real tabs, no outlines; “outline” look via bottom border
-  const rootTabProps = {
-    variant: 'unstyled',
-  };
-  const rootTabStyle = {
-    fontWeight: 'semibold',
-    px: 4,
-    py: 2,
-    color: 'gray.600',
-    borderBottom: '2px solid transparent',
-    rounded: 'none',
-    _hover: { color: 'gray.800', bg: 'transparent' },
-    _selected: { color: 'gray.900', borderColor: 'gray.900' },
-    _focus: { boxShadow: 'none' },
-    _focusVisible: { boxShadow: 'none', outline: 'none' },
-  };
-
   return (
     <Modal isOpen={isOpen} onClose={onClose} isCentered>
       <ModalOverlay />
-      {/* give the modal a scoped id for CSS overrides below */}
       <ModalContent id="auth-modal" bg="#ffbed9" color="black">
         <ModalHeader fontFamily="Slackey, cursive" textTransform="uppercase">
           Account
@@ -272,26 +309,22 @@ export default function AuthModal({ isOpen, onClose }) {
         <ModalCloseButton />
 
         <ModalBody pb={6}>
+          {/* ROOT TABS (binder style) */}
           <Tabs isFitted variant="unstyled">
-            <TabList
-              borderBottom="1px solid"
-              borderColor="gray.300"
-              mb={0}
-            >
-              <Tab {...rootTabProps} sx={rootTabStyle}>Log in</Tab>
-              <Tab {...rootTabProps} sx={rootTabStyle}>Sign up</Tab>
+            <TabList gap={2} mb="-1px">
+              <Tab sx={binderTab}>Log in</Tab>
+              <Tab sx={binderTab}>Sign up</Tab>
             </TabList>
 
-            {/* high-contrast white card for content */}
+            {/* White card that the selected tab connects to */}
             <TabPanels
               borderWidth="1px"
               borderColor="gray.300"
               rounded="md"
               bg="white"
               p={5}
-              mt={0}
             >
-              {/* ----------- LOG IN ----------- */}
+              {/* ---------- LOG IN ---------- */}
               <TabPanel>
                 <VStack align="stretch" spacing={4}>
                   <Button
@@ -305,22 +338,34 @@ export default function AuthModal({ isOpen, onClose }) {
                     Continue with Google
                   </Button>
 
-                  <HStack align="center"><Divider /><Text color="gray.600">or</Text><Divider /></HStack>
+                  <HStack align="center">
+                    <Divider />
+                    <Text color="gray.600">or</Text>
+                    <Divider />
+                  </HStack>
 
                   <Tabs variant="line" colorScheme="gray" isFitted>
                     <TabList>
-                      <Tab fontWeight="semibold" _focus={{ boxShadow: 'none' }}>Email</Tab>
-                      <Tab fontWeight="semibold" _focus={{ boxShadow: 'none' }}>Nickname</Tab>
+                      <Tab fontWeight="semibold" _focus={{ boxShadow: 'none' }}>
+                        Email
+                      </Tab>
+                      <Tab fontWeight="semibold" _focus={{ boxShadow: 'none' }}>
+                        Nickname
+                      </Tab>
                     </TabList>
                     <TabPanels pt={4}>
-                      <TabPanel px={0}><EmailSignIn /></TabPanel>
-                      <TabPanel px={0}><NicknameSignIn /></TabPanel>
+                      <TabPanel px={0}>
+                        <EmailSignIn />
+                      </TabPanel>
+                      <TabPanel px={0}>
+                        <NicknameSignIn />
+                      </TabPanel>
                     </TabPanels>
                   </Tabs>
                 </VStack>
               </TabPanel>
 
-              {/* ----------- SIGN UP ----------- */}
+              {/* ---------- SIGN UP ---------- */}
               <TabPanel>
                 <VStack align="stretch" spacing={4}>
                   <Button
@@ -334,16 +379,28 @@ export default function AuthModal({ isOpen, onClose }) {
                     Continue with Google
                   </Button>
 
-                  <HStack align="center"><Divider /><Text color="gray.600">or</Text><Divider /></HStack>
+                  <HStack align="center">
+                    <Divider />
+                    <Text color="gray.600">or</Text>
+                    <Divider />
+                  </HStack>
 
                   <Tabs variant="line" colorScheme="gray" isFitted>
                     <TabList>
-                      <Tab fontWeight="semibold" _focus={{ boxShadow: 'none' }}>Email</Tab>
-                      <Tab fontWeight="semibold" _focus={{ boxShadow: 'none' }}>Nickname</Tab>
+                      <Tab fontWeight="semibold" _focus={{ boxShadow: 'none' }}>
+                        Email
+                      </Tab>
+                      <Tab fontWeight="semibold" _focus={{ boxShadow: 'none' }}>
+                        Nickname
+                      </Tab>
                     </TabList>
                     <TabPanels pt={4}>
-                      <TabPanel px={0}><EmailSignUp /></TabPanel>
-                      <TabPanel px={0}><NicknameSignUp /></TabPanel>
+                      <TabPanel px={0}>
+                        <EmailSignUp />
+                      </TabPanel>
+                      <TabPanel px={0}>
+                        <NicknameSignUp />
+                      </TabPanel>
                     </TabPanels>
                   </Tabs>
                 </VStack>
