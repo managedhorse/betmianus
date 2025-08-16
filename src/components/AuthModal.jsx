@@ -1,13 +1,12 @@
-// src/components/AuthModal.jsx
 import { useEffect, useState } from 'react';
 import {
   Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody,
-  Tabs, TabList, TabPanels, Tab, TabPanel,
-  Button, Input, VStack, Text, Checkbox, HStack, Divider, Box
+  Button, Input, VStack, Text, Checkbox, HStack, Divider, Box, Tabs
 } from '@chakra-ui/react';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../context/AuthContext';
 
+// tiny helper for our nickname endpoints
 async function postJSON(url, body) {
   const r = await fetch(url, {
     method: 'POST',
@@ -19,39 +18,28 @@ async function postJSON(url, body) {
   return j;
 }
 
-const dark = '#2A3335';
-const panelBgLogin = 'gray.50';   // subtle gray for Log in
-const panelBgSignup = '#fff5f8';  // very light pink for Sign up
-
-// Shared field/button styles (not all-pink)
-const inputStyle = {
-  bg: 'white',
-  border: `2px solid ${dark}`,
-  _focus: { borderColor: '#FF6F91', boxShadow: 'none' },
-};
-
-const buttonStyle = {
-  bg: 'white',
-  border: `2px solid ${dark}`,
-  _hover: { bg: 'gray.50', transform: 'translateY(-1px)' },
-};
-
 export default function AuthModal({ isOpen, onClose }) {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState(0); // 0=Log in, 1=Sign up
 
-  // Close the modal once a session exists
-  useEffect(() => { if (isOpen && user) onClose(); }, [isOpen, user, onClose]);
+  // close when auth succeeds
+  useEffect(() => {
+    if (isOpen && user) onClose();
+  }, [isOpen, user, onClose]);
 
   const [msg, setMsg] = useState('');
-  useEffect(() => { if (isOpen) setMsg(''); }, [isOpen]);
+  useEffect(() => {
+    if (isOpen) setMsg('');
+  }, [isOpen]);
 
-  // Individual spinners
+  // separate loading flags
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [loadingEmailIn, setLoadingEmailIn] = useState(false);
   const [loadingEmailUp, setLoadingEmailUp] = useState(false);
   const [loadingNickIn, setLoadingNickIn] = useState(false);
   const [loadingNickUp, setLoadingNickUp] = useState(false);
+
+  // which main tab is active? (login | signup)
+  const [rootTab, setRootTab] = useState('login');
 
   const google = async () => {
     setMsg('');
@@ -64,7 +52,7 @@ export default function AuthModal({ isOpen, onClose }) {
     setLoadingGoogle(false);
   };
 
-  // ---------- Forms ----------
+  // -------- forms ----------
   const EmailSignIn = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -79,9 +67,11 @@ export default function AuthModal({ isOpen, onClose }) {
     return (
       <form onSubmit={submit}>
         <VStack align="stretch" spacing={3}>
-          <Input type="email" placeholder="Email" value={email} onChange={(e)=>setEmail(e.target.value)} required {...inputStyle}/>
-          <Input type="password" placeholder="Password" value={password} onChange={(e)=>setPassword(e.target.value)} required {...inputStyle}/>
-          <Button type="submit" isLoading={loadingEmailIn} {...buttonStyle}>Log in</Button>
+          <Input type="email" placeholder="Email" value={email}
+                 onChange={(e) => setEmail(e.target.value)} required />
+          <Input type="password" placeholder="Password" value={password}
+                 onChange={(e) => setPassword(e.target.value)} required />
+          <Button type="submit" isLoading={loadingEmailIn}>Log in</Button>
         </VStack>
       </form>
     );
@@ -100,6 +90,7 @@ export default function AuthModal({ isOpen, onClose }) {
           access_token: session.access_token,
           refresh_token: session.refresh_token,
         });
+        // modal will close via useAuth effect
       } catch (err) {
         setMsg(err.message);
       }
@@ -108,16 +99,18 @@ export default function AuthModal({ isOpen, onClose }) {
     return (
       <form onSubmit={submit}>
         <VStack align="stretch" spacing={3}>
-          <Input placeholder="Nickname" value={username} onChange={(e)=>setUsername(e.target.value)} required {...inputStyle}/>
-          <Input type="password" placeholder="Password" value={password} onChange={(e)=>setPassword(e.target.value)} required {...inputStyle}/>
-          <Button type="submit" isLoading={loadingNickIn} {...buttonStyle}>Log in with nickname</Button>
+          <Input placeholder="Nickname" value={username}
+                 onChange={(e) => setUsername(e.target.value)} required />
+          <Input type="password" placeholder="Password" value={password}
+                 onChange={(e) => setPassword(e.target.value)} required />
+          <Button type="submit" isLoading={loadingNickIn}>Log in with nickname</Button>
         </VStack>
       </form>
     );
   };
 
-  // EMAIL SIGN UP: email + password only
   const EmailSignUp = () => {
+    // NOTE: no nickname here (as requested)
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [agree, setAgree] = useState(false);
@@ -127,7 +120,8 @@ export default function AuthModal({ isOpen, onClose }) {
       if (!agree) { setMsg('Please confirm you are 18+ and accept the Terms.'); return; }
       setLoadingEmailUp(true);
       const { error } = await supabase.auth.signUp({
-        email, password,
+        email,
+        password,
         options: { emailRedirectTo: window.location.origin },
       });
       setMsg(error ? error.message : 'Check your email to confirm your account.');
@@ -136,12 +130,14 @@ export default function AuthModal({ isOpen, onClose }) {
     return (
       <form onSubmit={submit}>
         <VStack align="stretch" spacing={3}>
-          <Input type="email" placeholder="Email" value={email} onChange={(e)=>setEmail(e.target.value)} required {...inputStyle}/>
-          <Input type="password" placeholder="Password" value={password} onChange={(e)=>setPassword(e.target.value)} required {...inputStyle}/>
-          <Checkbox isChecked={agree} onChange={(e)=>setAgree(e.target.checked)}>
+          <Input type="email" placeholder="Email" value={email}
+                 onChange={(e) => setEmail(e.target.value)} required />
+          <Input type="password" placeholder="Password" value={password}
+                 onChange={(e) => setPassword(e.target.value)} required />
+          <Checkbox isChecked={agree} onChange={(e) => setAgree(e.target.checked)}>
             I am 18+ and accept the Terms & Risk Policy
           </Checkbox>
-          <Button type="submit" isLoading={loadingEmailUp} {...buttonStyle}>Create account</Button>
+          <Button type="submit" isLoading={loadingEmailUp}>Create account</Button>
         </VStack>
       </form>
     );
@@ -171,36 +167,23 @@ export default function AuthModal({ isOpen, onClose }) {
     return (
       <form onSubmit={submit}>
         <VStack align="stretch" spacing={3}>
-          <Input placeholder="Nickname (3–20 letters/numbers/_)" value={username} onChange={(e)=>setUsername(e.target.value)} required {...inputStyle}/>
-          <Input type="password" placeholder="Password" value={password} onChange={(e)=>setPassword(e.target.value)} required {...inputStyle}/>
-          <Checkbox isChecked={agree} onChange={(e)=>setAgree(e.target.checked)}>
+          <Input placeholder="Nickname (3–20 letters/numbers/_)" value={username}
+                 onChange={(e) => setUsername(e.target.value)} required />
+          <Input type="password" placeholder="Password" value={password}
+                 onChange={(e) => setPassword(e.target.value)} required />
+          <Checkbox isChecked={agree} onChange={(e) => setAgree(e.target.checked)}>
             I am 18+ and accept the Terms & Risk Policy
           </Checkbox>
-          <Button type="submit" isLoading={loadingNickUp} {...buttonStyle}>Create nickname account</Button>
+          <Button type="submit" isLoading={loadingNickUp}>Create nickname account</Button>
         </VStack>
       </form>
     );
   };
 
-  // Tab button styling (actual tab look: flat bottom, grayed inactive)
-  const tabSx = (isActive) => ({
-    px: 6,
-    py: 3,
-    fontWeight: 'bold',
-    roundedTop: 'md',
-    roundedBottom: 'none',
-    border: `2px solid ${dark}`,
-    borderBottom: '0',
-    bg: isActive ? 'white' : 'gray.200',
-    color: isActive ? 'black' : 'gray.600',
-    _hover: { bg: isActive ? 'white' : 'gray.300' },
-  });
-
-  const Card = ({ bg, children }) => (
-    <Box border={`2px solid ${dark}`} roundedBottom="md" p={4} bg={bg}>
-      {children}
-    </Box>
-  );
+  // panel styling changes with root tab to make the mode obvious
+  const panelBg = rootTab === 'login' ? 'gray.50' : 'pink.50';
+  const panelBorder = rootTab === 'login' ? 'gray.300' : 'pink.200';
+  const rootPalette = rootTab === 'login' ? 'gray' : 'pink';
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} isCentered>
@@ -208,63 +191,76 @@ export default function AuthModal({ isOpen, onClose }) {
       <ModalContent bg="#ffbed9" color="black">
         <ModalHeader fontFamily="Slackey, cursive" textTransform="uppercase">Account</ModalHeader>
         <ModalCloseButton />
+
         <ModalBody pb={6}>
-          <Tabs index={activeTab} onChange={setActiveTab} isFitted variant="unstyled">
-            <TabList borderBottom={`2px solid ${dark}`} mb="0">
-              <Tab sx={tabSx(activeTab === 0)}>Log in</Tab>
-              <Tab sx={tabSx(activeTab === 1)}>Sign up</Tab>
-            </TabList>
+          {/* --- MAIN TABS (Log in / Sign up) --- */}
+          <Tabs.Root
+            value={rootTab}
+            onValueChange={({ value }) => setRootTab(value)}
+            variant="outline"
+            colorPalette={rootPalette}
+            fitted
+          >
+            <Tabs.List mb="4">
+              <Tabs.Trigger value="login">Log in</Tabs.Trigger>
+              <Tabs.Trigger value="signup">Sign up</Tabs.Trigger>
+              <Tabs.Indicator />
+            </Tabs.List>
 
-            <TabPanels>
-              {/* LOG IN */}
-              <TabPanel px={0}>
-                <Card bg={panelBgLogin}>
-                  <VStack align="stretch" spacing={4}>
-                    <Button onClick={google} isLoading={loadingGoogle} {...buttonStyle}>
-                      Continue with Google
-                    </Button>
-                    <HStack><Divider /><Text opacity={0.7}>or</Text><Divider /></HStack>
+            {/* ------- LOGIN ------- */}
+            <Tabs.Content value="login">
+              <Box bg={panelBg} borderWidth="1px" borderColor={panelBorder} rounded="lg" p="5">
+                <VStack align="stretch" spacing={4}>
+                  <Button onClick={google} isLoading={loadingGoogle} variant="outline">
+                    Continue with Google
+                  </Button>
 
-                    <Tabs isFitted variant="unstyled">
-                      <TabList borderBottom={`1px solid ${dark}`}>
-                        <Tab sx={tabSx(true)} borderWidth="1px" borderBottom="0" roundedTop="sm">Email</Tab>
-                        <Tab sx={tabSx(false)} borderWidth="1px" borderBottom="0" roundedTop="sm" ml={2}>Nickname</Tab>
-                      </TabList>
-                      <TabPanels>
-                        <TabPanel px={0}><EmailSignIn /></TabPanel>
-                        <TabPanel px={0}><NicknameSignIn /></TabPanel>
-                      </TabPanels>
-                    </Tabs>
-                  </VStack>
-                </Card>
-              </TabPanel>
+                  <HStack align="center"><Divider /><Text opacity={0.7}>or</Text><Divider /></HStack>
 
-              {/* SIGN UP */}
-              <TabPanel px={0}>
-                <Card bg={panelBgSignup}>
-                  <VStack align="stretch" spacing={4}>
-                    <Button onClick={google} isLoading={loadingGoogle} {...buttonStyle}>
-                      Continue with Google
-                    </Button>
-                    <HStack><Divider /><Text opacity={0.7}>or</Text><Divider /></HStack>
+                  {/* inner tabs */}
+                  <Tabs.Root defaultValue="email" variant="outline" colorPalette="gray">
+                    <Tabs.List mb="4">
+                      <Tabs.Trigger value="email">Email</Tabs.Trigger>
+                      <Tabs.Trigger value="nickname">Nickname</Tabs.Trigger>
+                      <Tabs.Indicator />
+                    </Tabs.List>
+                    <Tabs.Content value="email"><EmailSignIn /></Tabs.Content>
+                    <Tabs.Content value="nickname"><NicknameSignIn /></Tabs.Content>
+                  </Tabs.Root>
+                </VStack>
+              </Box>
+            </Tabs.Content>
 
-                    <Tabs isFitted variant="unstyled">
-                      <TabList borderBottom={`1px solid ${dark}`}>
-                        <Tab sx={tabSx(true)} borderWidth="1px" borderBottom="0" roundedTop="sm">Email</Tab>
-                        <Tab sx={tabSx(false)} borderWidth="1px" borderBottom="0" roundedTop="sm" ml={2}>Nickname</Tab>
-                      </TabList>
-                      <TabPanels>
-                        <TabPanel px={0}><EmailSignUp /></TabPanel>
-                        <TabPanel px={0}><NicknameSignUp /></TabPanel>
-                      </TabPanels>
-                    </Tabs>
-                  </VStack>
-                </Card>
-              </TabPanel>
-            </TabPanels>
-          </Tabs>
+            {/* ------- SIGN UP ------- */}
+            <Tabs.Content value="signup">
+              <Box bg={panelBg} borderWidth="1px" borderColor={panelBorder} rounded="lg" p="5">
+                <VStack align="stretch" spacing={4}>
+                  <Button onClick={google} isLoading={loadingGoogle} variant="outline">
+                    Continue with Google
+                  </Button>
 
-          {msg && <Text mt={3} fontSize="sm" opacity={0.9}>{msg}</Text>}
+                  <HStack align="center"><Divider /><Text opacity={0.7}>or</Text><Divider /></HStack>
+
+                  {/* inner tabs */}
+                  <Tabs.Root defaultValue="email" variant="outline" colorPalette="pink">
+                    <Tabs.List mb="4">
+                      <Tabs.Trigger value="email">Email</Tabs.Trigger>
+                      <Tabs.Trigger value="nickname">Nickname</Tabs.Trigger>
+                      <Tabs.Indicator />
+                    </Tabs.List>
+                    <Tabs.Content value="email"><EmailSignUp /></Tabs.Content>
+                    <Tabs.Content value="nickname"><NicknameSignUp /></Tabs.Content>
+                  </Tabs.Root>
+                </VStack>
+              </Box>
+            </Tabs.Content>
+          </Tabs.Root>
+
+          {msg && (
+            <Text mt={3} fontSize="sm" opacity={0.9}>
+              {msg}
+            </Text>
+          )}
         </ModalBody>
       </ModalContent>
     </Modal>
