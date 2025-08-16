@@ -82,3 +82,34 @@ button:focus-visible {
 .recharts-pie * {
   outline: none !important;
 }
+
+/* ----- Auth modal visual polish (scoped) ----- */
+#auth-modal [role="tab"] {
+  outline: none !important;
+  box-shadow: none !important;
+}
+#auth-modal [role="tab"]:focus,
+#auth-modal [role="tab"]:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+#auth-modal button:focus,
+#auth-modal button:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Make underline variant look crisp */
+#auth-modal .chakra-tabs__tablist[data-orientation="horizontal"] {
+  border-color: #E2E8F0; /* gray.200 */
+}
+#auth-modal .chakra-tabs__tab[aria-selected="true"] {
+  color: #111827; /* gray.900 */
+}
+
+/* Inputs: clearer contrast when focused */
+#auth-modal input:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: #374151 !important; /* gray.700 */
+}

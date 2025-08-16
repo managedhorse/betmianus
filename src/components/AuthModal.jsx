@@ -1,9 +1,9 @@
-// src/components/AuthModal.jsx  (Chakra v2)
+// src/components/AuthModal.jsx
 import { useEffect, useState } from 'react';
 import {
   Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody,
   Tabs, TabList, TabPanels, Tab, TabPanel,
-  Button, Input, VStack, Text, Checkbox, HStack, Divider, Box
+  Button, Input, VStack, Text, Checkbox, HStack, Divider
 } from '@chakra-ui/react';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../context/AuthContext';
@@ -28,14 +28,14 @@ export default function AuthModal({ isOpen, onClose }) {
   const [msg, setMsg] = useState('');
   useEffect(() => { if (isOpen) setMsg(''); }, [isOpen]);
 
+  // per-action loaders
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [loadingEmailIn, setLoadingEmailIn] = useState(false);
-  const [loadingEmailUp, setLoadingEmailUp] = useState(false);
   const [loadingNickIn, setLoadingNickIn] = useState(false);
+  const [loadingEmailUp, setLoadingEmailUp] = useState(false);
   const [loadingNickUp, setLoadingNickUp] = useState(false);
 
-  const [rootIndex, setRootIndex] = useState(0);
-
+  // ---------- actions ----------
   const google = async () => {
     setMsg('');
     setLoadingGoogle(true);
@@ -47,7 +47,7 @@ export default function AuthModal({ isOpen, onClose }) {
     setLoadingGoogle(false);
   };
 
-  // ---------- Forms ----------
+  // ---------- forms ----------
   const EmailSignIn = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -138,7 +138,7 @@ export default function AuthModal({ isOpen, onClose }) {
     );
   };
 
-  // Email sign-up: email + password only
+  // Email sign-up: NO nickname
   const EmailSignUp = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -244,15 +244,19 @@ export default function AuthModal({ isOpen, onClose }) {
     );
   };
 
-  // Root tabs: no colored strokes, no focus ring; clear active/inactive
-  const tabClean = {
+  // Root tabs: real tabs, no outlines; “outline” look via bottom border
+  const rootTabProps = {
+    variant: 'unstyled',
+  };
+  const rootTabStyle = {
     fontWeight: 'semibold',
-    bg: 'transparent',
-    color: 'gray.700',
-    border: '0',
-    roundedTop: 'md',
-    _hover: { bg: 'gray.100' },
-    _selected: { bg: 'white', color: 'gray.900' },
+    px: 4,
+    py: 2,
+    color: 'gray.600',
+    borderBottom: '2px solid transparent',
+    rounded: 'none',
+    _hover: { color: 'gray.800', bg: 'transparent' },
+    _selected: { color: 'gray.900', borderColor: 'gray.900' },
     _focus: { boxShadow: 'none' },
     _focusVisible: { boxShadow: 'none', outline: 'none' },
   };
@@ -260,25 +264,25 @@ export default function AuthModal({ isOpen, onClose }) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} isCentered>
       <ModalOverlay />
-      <ModalContent bg="#ffbed9" color="black">
+      {/* give the modal a scoped id for CSS overrides below */}
+      <ModalContent id="auth-modal" bg="#ffbed9" color="black">
         <ModalHeader fontFamily="Slackey, cursive" textTransform="uppercase">
           Account
         </ModalHeader>
         <ModalCloseButton />
 
         <ModalBody pb={6}>
-          <Tabs
-            index={rootIndex}
-            onChange={setRootIndex}
-            variant="enclosed"
-            isFitted
-          >
-            <TabList border="0" mb={0}>
-              <Tab {...tabClean}>Log in</Tab>
-              <Tab {...tabClean}>Sign up</Tab>
+          <Tabs isFitted variant="unstyled">
+            <TabList
+              borderBottom="1px solid"
+              borderColor="gray.300"
+              mb={0}
+            >
+              <Tab {...rootTabProps} sx={rootTabStyle}>Log in</Tab>
+              <Tab {...rootTabProps} sx={rootTabStyle}>Sign up</Tab>
             </TabList>
 
-            {/* High-contrast, white content card */}
+            {/* high-contrast white card for content */}
             <TabPanels
               borderWidth="1px"
               borderColor="gray.300"
@@ -287,26 +291,22 @@ export default function AuthModal({ isOpen, onClose }) {
               p={5}
               mt={0}
             >
+              {/* ----------- LOG IN ----------- */}
               <TabPanel>
                 <VStack align="stretch" spacing={4}>
                   <Button
                     onClick={google}
                     isLoading={loadingGoogle}
                     variant="outline"
-                    borderColor="gray.400"
+                    borderColor="gray.300"
                     _hover={{ bg: 'gray.50' }}
                     _focus={{ boxShadow: 'none' }}
                   >
                     Continue with Google
                   </Button>
 
-                  <HStack align="center">
-                    <Divider />
-                    <Text color="gray.600">or</Text>
-                    <Divider />
-                  </HStack>
+                  <HStack align="center"><Divider /><Text color="gray.600">or</Text><Divider /></HStack>
 
-                  {/* inner tabs: subtle underline indicator */}
                   <Tabs variant="line" colorScheme="gray" isFitted>
                     <TabList>
                       <Tab fontWeight="semibold" _focus={{ boxShadow: 'none' }}>Email</Tab>
@@ -320,24 +320,21 @@ export default function AuthModal({ isOpen, onClose }) {
                 </VStack>
               </TabPanel>
 
+              {/* ----------- SIGN UP ----------- */}
               <TabPanel>
                 <VStack align="stretch" spacing={4}>
                   <Button
                     onClick={google}
                     isLoading={loadingGoogle}
                     variant="outline"
-                    borderColor="gray.400"
+                    borderColor="gray.300"
                     _hover={{ bg: 'gray.50' }}
                     _focus={{ boxShadow: 'none' }}
                   >
                     Continue with Google
                   </Button>
 
-                  <HStack align="center">
-                    <Divider />
-                    <Text color="gray.600">or</Text>
-                    <Divider />
-                  </HStack>
+                  <HStack align="center"><Divider /><Text color="gray.600">or</Text><Divider /></HStack>
 
                   <Tabs variant="line" colorScheme="gray" isFitted>
                     <TabList>
@@ -355,9 +352,9 @@ export default function AuthModal({ isOpen, onClose }) {
           </Tabs>
 
           {msg && (
-            <Box mt={3}>
-              <Text fontSize="sm" color="gray.800">{msg}</Text>
-            </Box>
+            <Text mt={3} fontSize="sm" color="gray.800">
+              {msg}
+            </Text>
           )}
         </ModalBody>
       </ModalContent>
