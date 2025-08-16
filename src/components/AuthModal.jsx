@@ -234,119 +234,119 @@ export default function AuthModal({ isOpen, onClose }) {
 
   // Email sign-up (no nickname)
   const EmailSignUp = () => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [agree, setAgree] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [agree, setAgree] = useState(false);
 
-    const submit = async (e) => {
-      e.preventDefault();
-      setMsg('');
-      setExistingEmail('');
-      if (!agree) return setMsg('Please confirm you are 18+ and accept the Terms.');
-      setLoadingEmailUp(true);
+  const submit = async (e) => {
+    e.preventDefault();
+    setMsg('');
+    setExistingEmail('');
+    if (!agree) return setMsg('Please confirm you are 18+ and accept the Terms.');
+    setLoadingEmailUp(true);
 
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { emailRedirectTo: window.location.origin },
-      });
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: window.location.origin },
+    });
 
-      setLoadingEmailUp(false);
+    setLoadingEmailUp(false);
 
-      if (error) {
-        // Supabase/GoTrue commonly returns code 'user_already_exists' with message like "User already registered"
-        const already =
-          error.code === 'user_already_exists' ||
-          /already\s+(exists|registered)/i.test(error.message || '');
-        if (already) {
-          setExistingEmail(email);
-          setMsg(
-            'That email is already registered. You can log in, use “Continue with Google” if you used it before, or set a password for this email.'
-          );
-        } else {
-          setMsg(error.message);
-        }
-        return;
+    if (error) {
+      const already =
+        error.code === 'user_already_exists' ||
+        /already\s+(exists|registered)/i.test(error.message || '');
+      if (already) {
+        // Case 2: already registered with email/password
+        setExistingEmail(email);
+        return setMsg(
+          'That email is already registered. You can log in, use “Continue with Google” if you used it before, or set a password for this email.'
+        );
       }
+      return setMsg(error.message);
+    }
 
-      // If there's a session, email confirmation is OFF: user is signed in immediately.
-      if (data?.session) {
-        setPendingEmail('');
-        setMsg('Account created. You’re signed in!');
-        return;
-      }
+    // If there's a session, confirmation is OFF → signed in immediately
+    if (data?.session) {
+      setPendingEmail('');
+      return setMsg('Account created. You’re signed in!');
+    }
 
-      // No session → confirmation required
-      setPendingEmail(email);
+    // No session → confirmation required.
+    // Detect Case 3: this email already had Google; user is linking a password.
+    const providers = (data?.user?.identities || []).map((i) => i.provider);
+    if (providers.includes('google') && providers.includes('email')) {
+      setMsg(
+        `You're adding a password to an existing Google account. We sent a confirmation link to ${email}.`
+      );
+    } else {
       setMsg(`We sent a confirmation link to ${email}.`);
-    };
-
-    return (
-      <form onSubmit={submit}>
-        <VStack align="stretch" spacing={3}>
-          <Input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            bg="white"
-            borderColor="gray.400"
-            _placeholder={{ color: 'gray.500' }}
-            _focus={{ borderColor: 'gray.700', boxShadow: 'none' }}
-          />
-          <Input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            bg="white"
-            borderColor="gray.400"
-            _placeholder={{ color: 'gray.500' }}
-            _focus={{ borderColor: 'gray.700', boxShadow: 'none' }}
-          />
-          <Checkbox isChecked={agree} onChange={(e) => setAgree(e.target.checked)}>
-            I am 18+ and accept the Terms & Risk Policy
-          </Checkbox>
-          <Button type="submit" isLoading={loadingEmailUp}>Create account</Button>
-
-          {/* If confirmation is required, offer "resend" */}
-          {pendingEmail && (
-            <Text fontSize="sm" color="gray.700">
-              Didn’t get it?{' '}
-              <Link onClick={resendConfirmation} textDecoration="underline">
-                Resend confirmation email
-              </Link>
-            </Text>
-          )}
-
-          {/* If email already exists, offer to set password for that email */}
-          {existingEmail && (
-            <Box fontSize="sm" color="gray.700">
-              <VStack align="start" spacing={2} mt={2}>
-                <Button
-                  size="sm"
-                  variant="link"
-                  onClick={() => sendPasswordSetupLink(existingEmail)}
-                  isLoading={loadingSetPwLink}
-                >
-                  Send password set link to {existingEmail}
-                </Button>
-                <Text>
-                  Or try{' '}
-                  <Link onClick={google} textDecoration="underline">
-                    Continue with Google
-                  </Link>
-                  .
-                </Text>
-              </VStack>
-            </Box>
-          )}
-        </VStack>
-      </form>
-    );
+    }
+    setPendingEmail(email);
   };
+
+  return (
+    <form onSubmit={submit}>
+      <VStack align="stretch" spacing={3}>
+        <Input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          bg="white"
+          borderColor="gray.400"
+          _placeholder={{ color: 'gray.500' }}
+          _focus={{ borderColor: 'gray.700', boxShadow: 'none' }}
+        />
+        <Input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          bg="white"
+          borderColor="gray.400"
+          _placeholder={{ color: 'gray.500' }}
+          _focus={{ borderColor: 'gray.700', boxShadow: 'none' }}
+        />
+        <Checkbox isChecked={agree} onChange={(e) => setAgree(e.target.checked)}>
+          I am 18+ and accept the Terms & Risk Policy
+        </Checkbox>
+        <Button type="submit" isLoading={loadingEmailUp}>Create account</Button>
+
+        {pendingEmail && (
+          <Text fontSize="sm" color="gray.700">
+            Didn’t get it?{' '}
+            <Link onClick={resendConfirmation} textDecoration="underline">
+              Resend confirmation email
+            </Link>
+          </Text>
+        )}
+
+        {existingEmail && (
+  <Box fontSize="sm" color="gray.700">
+    <VStack align="start" spacing={2} mt={2}>
+      <Button size="sm" variant="link"
+        onClick={() => sendPasswordSetupLink(existingEmail)}
+        isLoading={loadingSetPwLink}>
+        Send password set link to {existingEmail}
+      </Button>
+      <Button size="sm" variant="link"
+        onClick={resendConfirmation}>
+        Resend confirmation email
+      </Button>
+      <Text>
+        Or try <Link onClick={google} textDecoration="underline">Continue with Google</Link>.
+      </Text>
+    </VStack>
+  </Box>
+)}
+      </VStack>
+    </form>
+  );
+};
 
   const NicknameSignUp = () => {
     const [username, setUsername] = useState('');

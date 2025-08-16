@@ -83,11 +83,12 @@ const Navbar = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();           // drawer
   const { isOpen: authOpen, onOpen: openAuth, onClose: closeAuth } = useDisclosure(); // auth modal
 
-  // Open the auth modal automatically if user landed via a Supabase recovery link
-useEffect(() => {
+  useEffect(() => {
   const hash = new URLSearchParams(window.location.hash.slice(1));
   if (hash.get('type') === 'recovery') {
     openAuth();
+    // optional: clear hash so refresh/back doesn’t re-trigger
+    history.replaceState(null, '', window.location.pathname + window.location.search);
   }
 }, [openAuth]);
 
