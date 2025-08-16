@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Box,
   Flex,
@@ -82,6 +82,15 @@ const NavLink = ({ children, href }) => (
 const Navbar = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();           // drawer
   const { isOpen: authOpen, onOpen: openAuth, onClose: closeAuth } = useDisclosure(); // auth modal
+
+  // Open the auth modal automatically if user landed via a Supabase recovery link
+useEffect(() => {
+  const hash = new URLSearchParams(window.location.hash.slice(1));
+  if (hash.get('type') === 'recovery') {
+    openAuth();
+  }
+}, [openAuth]);
+
   const { user, profile, signOut } = useAuth();
   const { isConnected } = useAppKitAccount();
 

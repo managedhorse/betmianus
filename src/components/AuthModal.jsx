@@ -42,7 +42,7 @@ async function postJSON(url, body) {
 
 export default function AuthModal({ isOpen, onClose }) {
   const { user } = useAuth();
-
+  const [pendingEmail, setPendingEmail] = useState('');
   // -------- View state: "auth" (tabs) or "reset" (set new password) --------
   const [view, setView] = useState('auth'); // 'auth' | 'reset'
   const [isRecoverySession, setIsRecoverySession] = useState(false);
@@ -91,6 +91,12 @@ export default function AuthModal({ isOpen, onClose }) {
     });
     if (error) setMsg(error.message);
     setLoadingGoogle(false);
+  };
+
+  const resendConfirmation = async () => {
+  if (!pendingEmail) return;
+  const { error } = await supabase.auth.resend({ type: 'signup', email: pendingEmail });
+  setMsg(error ? error.message : `Confirmation email re-sent to ${pendingEmail}.`);
   };
 
   // ---------- forms ----------
@@ -213,18 +219,32 @@ export default function AuthModal({ isOpen, onClose }) {
     const [agree, setAgree] = useState(false);
 
     const submit = async (e) => {
-      e.preventDefault();
-      setMsg('');
-      if (!agree) return setMsg('Please confirm you are 18+ and accept the Terms.');
-      setLoadingEmailUp(true);
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { emailRedirectTo: window.location.origin },
-      });
-      setMsg(error ? error.message : 'Check your email to confirm your account.');
-      setLoadingEmailUp(false);
-    };
+  e.preventDefault();
+  setMsg('');
+  if (!agree) return setMsg('Please confirm you are 18+ and accept the Terms.');
+  setLoadingEmailUp(true);
+
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { emailRedirectTo: window.location.origin },
+  });
+
+  setLoadingEmailUp(false);
+
+  if (error) return setMsg(error.message);
+
+  // If there's a session, email confirmation is OFF and no email is coming.
+  if (data?.session) {
+    setPendingEmail('');
+    setMsg('Account created. You’re signed in!');
+    return;
+  }
+
+  // No session → confirmation required; store for "Resend"
+  setPendingEmail(email);
+  setMsg(`We sent a confirmation link to ${email}.`);
+};
 
     return (
       <form onSubmit={submit}>
@@ -255,6 +275,14 @@ export default function AuthModal({ isOpen, onClose }) {
             I am 18+ and accept the Terms & Risk Policy
           </Checkbox>
           <Button type="submit" isLoading={loadingEmailUp}>Create account</Button>
+          {pendingEmail && (
+  <Text fontSize="sm" color="gray.700">
+    Didn’t get it?{' '}
+    <Link onClick={resendConfirmation} textDecoration="underline">
+      Resend confirmation email
+    </Link>
+  </Text>
+)}
         </VStack>
       </form>
     );
@@ -327,9 +355,13 @@ export default function AuthModal({ isOpen, onClose }) {
       if (pw1 !== pw2) return setMsg('Passwords do not match.');
       setSaving(true);
       const { error } = await supabase.auth.updateUser({ password: pw1 });
-      if (error) setMsg(error.message);
-      else setMsg('Password updated. You can now continue.');
-      setSaving(false);
+if (error) {
+  setMsg(error.message);
+} else {
+  setMsg('Password updated. You can now sign in.');
+  setTimeout(() => setView('auth'), 1200); // <- automatically go back
+}
+setSaving(false);
     };
 
     const goBack = async () => {
@@ -470,20 +502,31 @@ export default function AuthModal({ isOpen, onClose }) {
         <ModalBody pb={6}>
           <Box>
             {view === 'auth' ? (
-              AuthTabs
-            ) : (
-              // binder look for the single Reset panel too
-              <Box>
-                <TabList gap={2} mb="-1px">
-                  <Tab sx={{ ...binderTab, _selected: { ...binderTab._selected } }} isDisabled>
-                    Reset
-                  </Tab>
-                </TabList>
-                <Box borderWidth="1px" borderColor="gray.300" rounded="md" bg="white" p={5}>
-                  <ResetPanel />
-                </Box>
-              </Box>
-            )}
+  AuthTabs
+) : (
+  <Box>
+    {/* Binder-style static header (no Tabs context) */}
+    <Box display="flex" gap={2} mb="-1px">
+      <Box
+        px={4}
+        py={2}
+        fontWeight="semibold"
+        color="gray.900"
+        bg="white"
+        border="1px solid"
+        borderColor="gray.300"
+        borderBottom="none"
+        borderTopRadius="md"
+      >
+        Reset
+      </Box>
+    </Box>
+
+    <Box borderWidth="1px" borderColor="gray.300" rounded="md" bg="white" p={5}>
+      <ResetPanel />
+    </Box>
+  </Box>
+)}
           </Box>
 
           {msg && (
