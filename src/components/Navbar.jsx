@@ -16,12 +16,16 @@ import {
   DrawerHeader,
   DrawerBody,
   VStack,
+  Button, Menu, MenuButton, MenuList, MenuItem, Avatar,
 } from '@chakra-ui/react';
 import { HamburgerIcon, CloseIcon } from '@chakra-ui/icons';
 import { FaTelegram, FaXTwitter } from 'react-icons/fa6';
 import coinSmallR from '../images/coinsmallR.webp';
 import { useAppKitAccount } from '@reown/appkit/react';
 import CustomConnectButton from './CustomConnectButton';
+import AuthModal from './AuthModal';
+import { useAuth } from '../context/AuthContext';
+import { supabase } from '../lib/supabaseClient';
 
 const basePinkGradient = 'linear(to-r, #FFCFEF, #FFCFEF)';
 const buttonHoverStyle = {
@@ -76,6 +80,8 @@ const NavLink = ({ children, href }) => (
 
 const Navbar = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isOpen: authOpen, onOpen: openAuth, onClose: closeAuth } = useDisclosure(); // auth modal
+  const { user, signOut } = useAuth();  // from AuthProvider
 
   const { isConnected } = useAppKitAccount();
 
@@ -147,6 +153,30 @@ const Navbar = () => {
             )}
 
             <CustomConnectButton />
+            {/* Auth control */}
+            {user ? (
+              <Menu>
+                <MenuButton as={Button} variant="ghost" px={1}>
+                  <HStack>
+                    <Avatar size="sm" name={user.email} />
+                  </HStack>
+                </MenuButton>
+                <MenuList>
+                  <MenuItem isDisabled>{profile ? `UID #${profile.public_id}` : user.email}</MenuItem>
+                  <MenuItem onClick={signOut}>Sign out</MenuItem>
+                </MenuList>
+              </Menu>
+            ) : (
+              <Button
+                onClick={openAuth}
+                bgGradient="linear(to-r, #FFCFEF, #FFCFEF)"
+                border="2px solid #2A3335"
+                color="#2A3335"
+                _hover={{ transform: 'translateY(-3px)' }}
+              >
+                Login / Sign up
+              </Button>
+            )}
 
             <IconButton
               aria-label="Open Menu"
@@ -165,7 +195,8 @@ const Navbar = () => {
           </HStack>
         </Flex>
       </Box>
-
+{/* Auth modal */}
+      <AuthModal isOpen={authOpen} onClose={closeAuth} />
 
       <Drawer placement="right" onClose={onClose} isOpen={isOpen}>
         <DrawerOverlay />
