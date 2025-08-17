@@ -40,7 +40,7 @@ export default function CustomConnectButton() {
             cursor: 'not-allowed',
         }}
       >
-        Connect Wallet
+        Web3
       </Button>
       </Tooltip>
     );
