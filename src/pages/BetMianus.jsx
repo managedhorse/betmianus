@@ -25,6 +25,7 @@ import MianusHero from '../images/mianushero.webp';
 import Aboutsection from '../components/AboutSection'
 import Casinosection from '../components/CasinoSection';
 import Tokeninfosection from '../components/TokenInfoSection';
+import Footer from '../components/Footer';
 
 const MotionBox = motion.create(Box);
 const MotionImage = motion.create(Image);
@@ -248,16 +249,7 @@ const BetMianus = () => {
           <Casinosection />
             <FAQ />
 
-            <Box as="footer" w="full" py="4" bg="#0A5EB0" color="#FFFFFF" textAlign="center">
-              <Text
-                fontSize="sm"
-                fontFamily="Raleway, sans-serif"
-                fontWeight="medium"
-                textShadow="1px 1px #2A3335"
-              >
-                © {new Date().getFullYear()} Bet Mianus. All rights reserved.
-              </Text>
-            </Box>
+            <Footer />
           </Box>
      </Box>
     </>
