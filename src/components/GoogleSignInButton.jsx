@@ -42,52 +42,54 @@ export default function GoogleSignInButton({
   }, [locale, onError]);
 
   useEffect(() => {
-    if (!ready || !divRef.current || !window.google || !clientId) return;
+  if (!ready || !divRef.current || !window.google || !clientId) return;
 
-    // Initialize GIS
-    try {
-      window.google.accounts.id.initialize({
-        client_id: clientId,
-        callback: async (response) => {
-          try {
-            onStart?.();
-            const token = response?.credential;
-            if (!token) throw new Error('No credential from Google.');
-            const { error } = await supabase.auth.signInWithIdToken({
-              provider: 'google',
-              token,
-              nonce, // same nonce we provide below
-            });
-            if (error) throw error;
-            // success: Supabase session will be set; your AuthContext will update/close modal
-          } catch (e) {
-            onError?.(e?.message || 'Google sign-in failed.');
-          } finally {
-            onFinish?.();
-          }
-        },
-        ux_mode: 'popup',
-        nonce, // raw nonce; GIS hashes internally and includes in the ID token
-      });
+  try {
+    window.google.accounts.id.initialize({
+      client_id: clientId,
+      callback: async (response) => {
+        try {
+          onStart?.();
+          const token = response?.credential;
+          if (!token) throw new Error('No credential from Google.');
+          const { error } = await supabase.auth.signInWithIdToken({
+            provider: 'google',
+            token,
+            nonce,
+          });
+          if (error) throw error;
+        } catch (e) {
+          onError?.(e?.message || 'Google sign-in failed.');
+        } finally {
+          onFinish?.();
+        }
+      },
+      ux_mode: 'popup',
+      nonce,
+    });
 
-      // Render official button
-      window.google.accounts.id.renderButton(divRef.current, {
-        type: 'standard',
-        theme: 'outline',
-        size: 'large',
-        text: 'continue_with',   // shows "Continue with Google"
-        shape: 'rectangular',
-        logo_alignment: 'left',
-        width: width.toString(), // Google accepts numeric or string
-      });
-
-      // (Optional) One Tap:
-      // window.google.accounts.id.prompt();
-    } catch (e) {
-      onError?.('Google Sign-In init failed.');
+    const opts = {
+      type: 'standard',
+      theme: 'outline',
+      size: 'large',
+      text: 'continue_with',
+      shape: 'rectangular',
+      logo_alignment: 'left',
+      // width must be a number in px; omit if not provided
+    };
+    if (typeof width === 'number' && Number.isFinite(width)) {
+      opts.width = width; // e.g. 320
     }
-  }, [ready, clientId, nonce, onError, onStart, onFinish, width]);
 
-  // Simple container; GIS will replace its contents with the official button
-  return <div ref={divRef} style={{ width }} />;
+    window.google.accounts.id.renderButton(divRef.current, opts);
+
+    // Optional One Tap
+    // window.google.accounts.id.prompt();
+  } catch (e) {
+    onError?.('Google Sign-In init failed.');
+  }
+}, [ready, clientId, nonce, onError, onStart, onFinish, width]);
+
+// Center the button; don't try to force 100% width
+return <div ref={divRef} style={{ display: 'flex', justifyContent: 'center' }} />;
 }

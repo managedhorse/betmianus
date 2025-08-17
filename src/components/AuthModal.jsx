@@ -351,10 +351,7 @@ export default function AuthModal({ isOpen, onClose }) {
 
       {/* If the account is Google, only offer Google sign-in */}
       {existingProviders.includes('google') && (
-        <GoogleSignInButton
-  onError={(m) => setMsg(m)}
-  width="100%"
-/>
+        <GoogleSignInButton onError={(m) => setMsg(m)} />
       )}
     </VStack>
   </Box>
@@ -504,10 +501,7 @@ export default function AuthModal({ isOpen, onClose }) {
           {/* LOG IN */}
           <TabPanel>
             <VStack align="stretch" spacing={4}>
-              <GoogleSignInButton
-  onError={(m) => setMsg(m)}
-  width="100%"
-/>
+              <GoogleSignInButton onError={(m) => setMsg(m)} />
 
               <HStack align="center"><Divider /><Text color="gray.600">or</Text><Divider /></HStack>
 
@@ -527,10 +521,7 @@ export default function AuthModal({ isOpen, onClose }) {
           {/* SIGN UP */}
           <TabPanel>
             <VStack align="stretch" spacing={4}>
-              <GoogleSignInButton
-  onError={(m) => setMsg(m)}
-  width="100%"
-/>
+              <GoogleSignInButton onError={(m) => setMsg(m)} />
 
               <HStack align="center"><Divider /><Text color="gray.600">or</Text><Divider /></HStack>
 
