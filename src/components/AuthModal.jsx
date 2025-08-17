@@ -490,7 +490,11 @@ export default function AuthModal({ isOpen, onClose }) {
           {/* LOG IN */}
           <TabPanel>
             <VStack align="stretch" spacing={4}>
-             <GoogleSignInButton isActive={topTab === 0} onError={(m) => setMsg(m)} />
+             <GoogleSignInButton
+  isActive={topTab === 0}
+  context="signin"
+  onError={(m) => setMsg(m)}
+/>
 
               <HStack align="center"><Divider /><Text color="gray.600">or</Text><Divider /></HStack>
 
@@ -510,7 +514,11 @@ export default function AuthModal({ isOpen, onClose }) {
           {/* SIGN UP */}
           <TabPanel>
             <VStack align="stretch" spacing={4}>
-              <GoogleSignInButton isActive={topTab === 1} onError={(m) => setMsg(m)} />
+              <GoogleSignInButton
+  isActive={topTab === 1}
+  context="signup"
+  onError={(m) => setMsg(m)}
+/>
 
               <HStack align="center"><Divider /><Text color="gray.600">or</Text><Divider /></HStack>
 

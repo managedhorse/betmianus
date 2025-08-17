@@ -1,67 +1,74 @@
-// src/components/GoogleSignInButton.jsx
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
 /**
- * Google Sign-In button that:
- * - Loads GIS once
- * - Initializes once
- * - Renders only when visible and container has width
- * - Uses fixed pixel width (defaults 320px)
- *
- * Props:
- * - isActive: boolean -> call with true when its tab is active
- * - onError: (msg: string) => void
- * - onSuccess: () => void
- * - widthPx: number (200..400) default 320
- * - text/theme/size/shape/context: GIS customization options
+ * Reliable Google Sign-In button:
+ * - Loads GIS once and tracks "sdkReady"
+ * - Initializes once (global)
+ * - Renders on: mount, when sdkReady flips true, and whenever isActive changes
+ * - Uses fixed pixel width (GIS requires px, not %)
  */
 export default function GoogleSignInButton({
   isActive = true,
   onError,
   onSuccess,
-  widthPx = 320, // IMPORTANT: GIS wants px, not %
-  text = 'continue_with',
-  theme = 'outline',
-  size = 'large',
-  shape = 'rectangular',
-  context = 'signin',
+  widthPx = 320,          // 200..400 recommended by GIS
+  text = 'continue_with', // 'signin_with' | 'continue_with' | etc.
+  theme = 'outline',      // 'outline' | 'filled_blue' | 'filled_black'
+  size = 'large',         // 'large' | 'medium' | 'small'
+  shape = 'rectangular',  // 'rectangular' | 'pill' | 'circle' | 'square'
+  context = 'signin',     // 'signin' | 'signup' | 'use'
 }) {
   const containerRef = useRef(null);
+  const [sdkReady, setSdkReady] = useState(
+    !!(typeof window !== 'undefined' && window.google?.accounts?.id)
+  );
   const [rendered, setRendered] = useState(false);
 
-  // Load the GIS script once
+  // --- load the GIS script once, and flip sdkReady on load
   useEffect(() => {
-    if (window.google && window.google.accounts) return;
+    if (sdkReady) return;
 
-    const id = 'gis-sdk';
-    if (document.getElementById(id)) return;
+    const EXISTING = document.getElementById('gis-sdk');
+    const onLoad = () => setSdkReady(true);
+
+    if (EXISTING) {
+      // If it’s already on the page, attach load handler (or mark ready immediately)
+      if (window.google?.accounts?.id) {
+        setSdkReady(true);
+      } else {
+        EXISTING.addEventListener('load', onLoad);
+        return () => EXISTING.removeEventListener('load', onLoad);
+      }
+      return;
+    }
 
     const s = document.createElement('script');
+    s.id = 'gis-sdk';
     s.src = 'https://accounts.google.com/gsi/client';
     s.async = true;
     s.defer = true;
-    s.id = id;
+    s.addEventListener('load', onLoad);
     document.head.appendChild(s);
-  }, []);
+    return () => s.removeEventListener('load', onLoad);
+  }, [sdkReady]);
 
-  // Initialize GIS exactly once per page
+  // --- initialize GIS exactly once (after sdkReady)
   useEffect(() => {
-    function initOnce() {
-      if (!window.google || !window.google.accounts?.id) return false;
-      if (window.__gisInitialized) return true;
+    if (!sdkReady) return;
+    if (window.__gisInitialized) return;
 
-      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-      if (!clientId) {
-        onError?.('Missing VITE_GOOGLE_CLIENT_ID');
-        return false;
-      }
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      onError?.('Missing VITE_GOOGLE_CLIENT_ID');
+      return;
+    }
 
+    try {
       window.google.accounts.id.initialize({
         client_id: clientId,
         callback: async (response) => {
           try {
-            // Exchange the Google ID token with Supabase
             const { data, error } = await supabase.auth.signInWithIdToken({
               provider: 'google',
               token: response.credential,
@@ -73,38 +80,27 @@ export default function GoogleSignInButton({
           }
         },
         ux_mode: 'popup',
-        // login_uri: can be used for redirect mode if you prefer
       });
-
       window.__gisInitialized = true;
-      return true;
+    } catch (e) {
+      onError?.('Failed to initialize Google Identity Services.');
     }
+  }, [sdkReady, onError, onSuccess]);
 
-    initOnce();
-  }, [onError, onSuccess]);
-
-  // Only render when:
-  //  - Google is ready
-  //  - This tab/panel is active (visible)
-  //  - Container has measurable width
+  // --- render the button
   const tryRender = () => {
     if (rendered) return;
-    if (!isActive) return;
+    if (!isActive) return;                        // only render for the active tab
+    if (!window.__gisInitialized) return;
 
-    const g = window.google?.accounts?.id;
     const el = containerRef.current;
-    if (!g || !el) return;
+    const api = window.google?.accounts?.id;
+    if (!el || !api) return;
 
-    // visible & has width
-    const width = el.getBoundingClientRect().width;
-    const isVisible = !!el.offsetParent || window.getComputedStyle(el).display !== 'none';
-    if (!isVisible || width < 10) return;
-
-    // Clear any stale contents (React remounts, etc.)
+    // Clear any previous contents, then render
     el.innerHTML = '';
-
     try {
-      g.renderButton(el, {
+      api.renderButton(el, {
         theme,
         size,
         text,
@@ -114,33 +110,46 @@ export default function GoogleSignInButton({
       });
       setRendered(true);
     } catch (e) {
-      onError?.('Could not render Google button.');
+      // If rendering fails (rare), schedule a small retry
+      setTimeout(() => {
+        try {
+          api.renderButton(el, {
+            theme,
+            size,
+            text,
+            shape,
+            context,
+            width: Math.min(Math.max(widthPx, 200), 400),
+          });
+          setRendered(true);
+        } catch {
+          onError?.('Could not render Google button.');
+        }
+      }, 150);
     }
   };
 
-  // Re-try render on:
-  //  - mount
-  //  - when active changes
-  //  - size changes (ResizeObserver)
+  // render when: mounted, sdkReady flips, isActive flips
   useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-
-    // try immediately and again next tick (in case of Chakra transitions)
+    // immediate + short delayed attempt to avoid layout races
     const t1 = setTimeout(tryRender, 0);
-    const t2 = setTimeout(tryRender, 250);
-
-    // observe size changes
-    const ro = new ResizeObserver(() => tryRender());
-    ro.observe(el);
-
+    const t2 = setTimeout(tryRender, 200);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
-      ro.disconnect();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isActive]); // when tab becomes active, we can finally render
+  }, [sdkReady, isActive]);
+
+  // also re-try if the container resizes (e.g., modal transitions)
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => tryRender());
+    ro.observe(el);
+    return () => ro.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div
@@ -149,8 +158,7 @@ export default function GoogleSignInButton({
         display: 'flex',
         justifyContent: 'center',
         width: '100%',
-        // give the box some min-height so layout doesn't collapse while waiting
-        minHeight: 44, // ~button height
+        minHeight: 44, // keep layout height while the SDK loads
       }}
     />
   );
