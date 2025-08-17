@@ -62,7 +62,6 @@ export default function AuthModal({ isOpen, onClose }) {
   }, [isOpen]);
 
   // Loaders
-  const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [loadingEmailIn, setLoadingEmailIn] = useState(false);
   const [loadingNickIn, setLoadingNickIn] = useState(false);
   const [loadingEmailUp, setLoadingEmailUp] = useState(false);
@@ -90,18 +89,6 @@ export default function AuthModal({ isOpen, onClose }) {
   useEffect(() => {
     if (isOpen && user && view !== 'reset') onClose();
   }, [isOpen, user, view, onClose]);
-
-  // ---------- actions ----------
-  const google = async () => {
-    setMsg('');
-    setLoadingGoogle(true);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.origin },
-    });
-    if (error) setMsg(error.message);
-    setLoadingGoogle(false);
-  };
 
   const resendConfirmation = async () => {
     if (!pendingEmail) return;
@@ -540,7 +527,7 @@ export default function AuthModal({ isOpen, onClose }) {
         </TabPanels>
       </Tabs>
     ),
-    [loadingGoogle] // eslint-disable-line react-hooks/exhaustive-deps
+   [] // no deps
   );
 
   return (
