@@ -173,12 +173,7 @@ const Navbar = () => {
                     </HStack>
                   </MenuButton>
                   <MenuList>
-                    <MenuItem isDisabled>
-                      {profile?.username ? `@${profile.username}` : user?.email || 'Signed in'}
-                    </MenuItem>
-                    <MenuItem isDisabled>
-                      {profile?.public_id ? `UID #${profile.public_id}` : 'UID pending'}
-                    </MenuItem>
+                    <MenuItem as={RouterLink} to="/account">Account</MenuItem>
                     <MenuItem as={RouterLink} to="/logout">Sign out</MenuItem>
                   </MenuList>
                 </Menu>

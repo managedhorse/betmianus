@@ -6,6 +6,8 @@ import Logout from './pages/Logout.jsx';
 import PrivacyPolicy from './pages/PrivacyPolicy.jsx'; 
 import Terms from './pages/Terms.jsx'; 
 import NotFound from './pages/NotFound.jsx';
+import Account from './pages/Account.jsx';
+import RequireAuth from './routes/RequireAuth.jsx';
 import '@reown/appkit-wallet-button';
 
 function App() {
@@ -18,6 +20,14 @@ function App() {
           <Route path="/privacy-policy" element={<PrivacyPolicy />} /> 
           <Route path="/terms" element={<Terms />} />
           <Route path="*" element={<NotFound />} />
+          <Route
+            path="/account"
+            element={
+              <RequireAuth>
+                <Account />
+              </RequireAuth>
+            }
+          />
         </Routes>
       </BrowserRouter>
     </AppKitProvider>
