@@ -10,6 +10,8 @@ import { useAuth } from '../context/AuthContext';
 import { FiArrowLeft } from 'react-icons/fi';
 import GoogleSignInButton from './GoogleSignInButton';
 
+const appBlueGradient = 'linear(to-br, #0A5EB0, #0A97B0)';
+
 const binderTab = {
   px: 4,
   py: 2,
@@ -23,12 +25,14 @@ const binderTab = {
   _hover: { bg: 'gray.50', color: 'gray.800' },
   _focus: { boxShadow: 'none' },
   _selected: {
-    color: 'gray.900',
-    bg: 'white',
-    borderColor: 'gray.300',
-    borderBottomColor: 'white',
-    mb: '-1px',
-  },
+  color: 'gray.900',
+  bg: 'white',
+  borderColor: 'gray.300',
+  borderBottomColor: 'white',
+  mb: '-1px',
+  
+  boxShadow: 'inset 0 -2px 0 #0A97B0',
+},
 };
 
 async function postJSON(url, body) {
@@ -542,48 +546,58 @@ export default function AuthModal({ isOpen, onClose }) {
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} isCentered>
-      <ModalOverlay />
-      <ModalContent id="auth-modal" bg="#ffbed9" color="black">
-        <ModalHeader fontFamily="Slackey, cursive" textTransform="uppercase">
-          Account
-        </ModalHeader>
-        <ModalCloseButton />
-        <ModalBody pb={6}>
-          <Box>
-            {view === 'auth' ? (
-              AuthTabs
-            ) : (
-              // "Reset" header styled like a binder tab, without Tabs context
-              <Box>
-                <Box display="flex" gap={2} mb="-1px">
-                  <Box
-                    px={4}
-                    py={2}
-                    fontWeight="semibold"
-                    color="gray.900"
-                    bg="white"
-                    border="1px solid"
-                    borderColor="gray.300"
-                    borderBottom="none"
-                    borderTopRadius="md"
-                  >
-                    Reset
-                  </Box>
-                </Box>
-                <Box borderWidth="1px" borderColor="gray.300" rounded="md" bg="white" p={5}>
-                  <ResetPanel />
+      <ModalOverlay
+  bg="rgba(9, 36, 73, 0.55)"           // blue-tinted scrim
+  backdropFilter="blur(6px)"            // frosted effect
+/>
+
+<ModalContent id="auth-modal" bg="transparent" boxShadow="none" mx={4}>
+  {/* Gradient frame */}
+  <Box bgGradient={appBlueGradient} p="1.5" rounded="xl" boxShadow="2xl">
+    {/* Actual card stays white for best readability */}
+    <Box bg="white" color="black" rounded="lg" overflow="hidden">
+      <ModalHeader fontFamily="Slackey, cursive" textTransform="uppercase">
+        Account
+      </ModalHeader>
+      <ModalCloseButton />
+      <ModalBody pb={6}>
+        {/* keep your existing body exactly as-is */}
+        <Box>
+          {view === 'auth' ? (
+            AuthTabs
+          ) : (
+            <Box>
+              <Box display="flex" gap={2} mb="-1px">
+                <Box
+                  px={4}
+                  py={2}
+                  fontWeight="semibold"
+                  color="gray.900"
+                  bg="white"
+                  border="1px solid"
+                  borderColor="gray.300"
+                  borderBottom="none"
+                  borderTopRadius="md"
+                >
+                  Reset
                 </Box>
               </Box>
-            )}
-          </Box>
-
-          {msg && (
-            <Text mt={3} fontSize="sm" color="gray.800">
-              {msg}
-            </Text>
+              <Box borderWidth="1px" borderColor="gray.300" rounded="md" bg="white" p={5}>
+                <ResetPanel />
+              </Box>
+            </Box>
           )}
-        </ModalBody>
-      </ModalContent>
+        </Box>
+
+        {msg && (
+          <Text mt={3} fontSize="sm" color="gray.800">
+            {msg}
+          </Text>
+        )}
+      </ModalBody>
+    </Box>
+  </Box>
+</ModalContent>
     </Modal>
   );
 }
