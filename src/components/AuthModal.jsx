@@ -35,6 +35,29 @@ const binderTab = {
 },
 };
 
+const TermsLinks = () => (
+  <>
+    I am 18+ and accept the{' '}
+    <Link
+      href="/terms"
+      isExternal
+      textDecoration="underline"
+      onClick={(e) => e.stopPropagation()}
+    >
+      Terms
+    </Link>{' '}
+    &{' '}
+    <Link
+      href="/terms"
+      isExternal
+      textDecoration="underline"
+      onClick={(e) => e.stopPropagation()}
+    >
+      Risk Policy
+    </Link>
+  </>
+);
+
 async function postJSON(url, body) {
   const r = await fetch(url, {
     method: 'POST',
@@ -137,28 +160,7 @@ export default function AuthModal({ isOpen, onClose }) {
       setLoadingReset(false);
     };
 
-    const TermsLinks = () => (
-  <>
-    I am 18+ and accept the{' '}
-    <Link
-      href="/terms"
-      isExternal
-      textDecoration="underline"
-      onClick={(e) => e.stopPropagation()}
-    >
-      Terms
-    </Link>{' '}
-    &{' '}
-    <Link
-      href="/terms"
-      isExternal
-      textDecoration="underline"
-      onClick={(e) => e.stopPropagation()}
-    >
-      Risk Policy
-    </Link>
-  </>
-);
+    
 
     return (
       <form onSubmit={submit}>
