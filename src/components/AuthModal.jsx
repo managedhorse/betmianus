@@ -8,6 +8,7 @@ import {
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { FiArrowLeft } from 'react-icons/fi';
+import GoogleSignInButton from './GoogleSignInButton';
 
 const binderTab = {
   px: 4,
@@ -350,9 +351,10 @@ export default function AuthModal({ isOpen, onClose }) {
 
       {/* If the account is Google, only offer Google sign-in */}
       {existingProviders.includes('google') && (
-        <Button size="sm" variant="link" onClick={google}>
-          Continue with Google
-        </Button>
+        <GoogleSignInButton
+  onError={(m) => setMsg(m)}
+  width="100%"
+/>
       )}
     </VStack>
   </Box>
@@ -502,16 +504,10 @@ export default function AuthModal({ isOpen, onClose }) {
           {/* LOG IN */}
           <TabPanel>
             <VStack align="stretch" spacing={4}>
-              <Button
-                onClick={google}
-                isLoading={loadingGoogle}
-                variant="outline"
-                borderColor="gray.300"
-                _hover={{ bg: 'gray.50' }}
-                _focus={{ boxShadow: 'none' }}
-              >
-                Continue with Google
-              </Button>
+              <GoogleSignInButton
+  onError={(m) => setMsg(m)}
+  width="100%"
+/>
 
               <HStack align="center"><Divider /><Text color="gray.600">or</Text><Divider /></HStack>
 
@@ -531,16 +527,10 @@ export default function AuthModal({ isOpen, onClose }) {
           {/* SIGN UP */}
           <TabPanel>
             <VStack align="stretch" spacing={4}>
-              <Button
-                onClick={google}
-                isLoading={loadingGoogle}
-                variant="outline"
-                borderColor="gray.300"
-                _hover={{ bg: 'gray.50' }}
-                _focus={{ boxShadow: 'none' }}
-              >
-                Continue with Google
-              </Button>
+              <GoogleSignInButton
+  onError={(m) => setMsg(m)}
+  width="100%"
+/>
 
               <HStack align="center"><Divider /><Text color="gray.600">or</Text><Divider /></HStack>
 
