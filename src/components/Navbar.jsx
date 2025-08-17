@@ -1,3 +1,4 @@
+// src/components/Navbar.jsx
 import React, { useEffect } from 'react';
 import {
   Box,
@@ -28,6 +29,8 @@ import { useAppKitAccount } from '@reown/appkit/react';
 import CustomConnectButton from './CustomConnectButton';
 import AuthModal from './AuthModal';
 import { useAuth } from '../context/AuthContext';
+import { HashLink } from 'react-router-hash-link';
+import { Link as RouterLink } from 'react-router-dom';
 
 const basePinkGradient = 'linear(to-r, #FFCFEF, #FFCFEF)';
 const buttonHoverStyle = {
@@ -42,9 +45,19 @@ const buttonHoverStyle = {
   },
 };
 
-const NavLink = ({ children, href }) => (
+// Smooth scroll with offset for fixed header
+const scrollWithOffset = (el) => {
+  const y = el.getBoundingClientRect().top + window.pageYOffset - 88; // ~64px header + spacing
+  window.scrollTo({ top: y, behavior: 'smooth' });
+};
+
+const NavHashLink = ({ children, to, onClick }) => (
   <Link
-    href={href}
+    as={HashLink}
+    to={to}
+    smooth
+    scroll={scrollWithOffset}
+    onClick={onClick}
     position="relative"
     px={3}
     py={1}
@@ -80,27 +93,27 @@ const NavLink = ({ children, href }) => (
 );
 
 const Navbar = () => {
-  const { isOpen, onOpen, onClose } = useDisclosure();           // drawer
-  const { isOpen: authOpen, onOpen: openAuth, onClose: closeAuth } = useDisclosure(); // auth modal
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isOpen: authOpen, onOpen: openAuth, onClose: closeAuth } = useDisclosure();
 
   useEffect(() => {
-  const hash = new URLSearchParams(window.location.hash.slice(1));
-  if (hash.get('type') === 'recovery') {
-    openAuth();
-    // optional: clear hash so refresh/back doesn’t re-trigger
-    history.replaceState(null, '', window.location.pathname + window.location.search);
-  }
-}, [openAuth]);
+    const hash = new URLSearchParams(window.location.hash.slice(1));
+    if (hash.get('type') === 'recovery') {
+      openAuth();
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+  }, [openAuth]);
 
-  const { user, profile, signOut } = useAuth();
+  const { user, profile } = useAuth();
   const { isConnected } = useAppKitAccount();
 
+  // Use absolute paths so they work from any route
   const navItems = [
-    { label: 'Airdrop', href: '#airdrop' },
-    { label: 'Tokenomics', href: '#tokenomics' },
-    { label: 'About', href: '#about' },
-    { label: 'Casino', href: '#casino' },
-    { label: 'FAQ', href: '#faq' },
+    { label: 'Airdrop', to: '/#airdrop' },
+    { label: 'Tokenomics', to: '/#tokenomics' },
+    { label: 'About', to: '/#about' },
+    { label: 'Casino', to: '/#casino' },
+    { label: 'FAQ', to: '/#faq' },
   ];
 
   return (
@@ -114,7 +127,7 @@ const Navbar = () => {
           mx="auto"
           px={4}
         >
-          <HStack spacing={2} alignItems="center">
+          <HStack as={RouterLink} to="/" spacing={2} alignItems="center">
             <Image src={coinSmallR} alt="Mianus Token Logo" boxSize="40px" />
             <Box
               fontFamily="Slackey, cursive"
@@ -130,10 +143,10 @@ const Navbar = () => {
           </HStack>
 
           <HStack spacing={4} flex={1} justify="center" display={{ base: 'none', md: 'flex' }}>
-            {navItems.map((navItem) => (
-              <NavLink key={navItem.label} href={navItem.href}>
-                {navItem.label}
-              </NavLink>
+            {navItems.map((item) => (
+              <NavHashLink key={item.label} to={item.to}>
+                {item.label}
+              </NavHashLink>
             ))}
           </HStack>
 
@@ -147,45 +160,40 @@ const Navbar = () => {
               </Link>
             </HStack>
 
-            {isConnected && (
-              <>
-                <appkit-network-button disabled={false} size="sm" />
-              </>
-            )}
+            {isConnected && <appkit-network-button disabled={false} size="sm" />}
 
             <CustomConnectButton />
 
-           {/* Auth control (force remount on user change) */}
-<React.Fragment key={user?.id || 'anon'}>
-  {user ? (
-    <Menu>
-      <MenuButton as={Button} variant="ghost" px={1}>
-        <HStack>
-          <Avatar size="sm" name={profile?.username || user?.email || 'User'} />
-        </HStack>
-      </MenuButton>
-      <MenuList>
-        <MenuItem isDisabled>
-          {profile?.username ? `@${profile.username}` : (user?.email || 'Signed in')}
-        </MenuItem>
-        <MenuItem isDisabled>
-          {profile?.public_id ? `UID #${profile.public_id}` : 'UID pending'}
-        </MenuItem>
-        <MenuItem as="a" href="/logout">Sign out</MenuItem>
-      </MenuList>
-    </Menu>
-  ) : (
-    <Button
-      onClick={openAuth}
-      bgGradient="linear(to-r, #FFCFEF, #FFCFEF)"
-      border="2px solid #2A3335"
-      color="#2A3335"
-      _hover={{ transform: 'translateY(-3px)' }}
-    >
-      Login / Sign up
-    </Button>
-  )}
-</React.Fragment>
+            <React.Fragment key={user?.id || 'anon'}>
+              {user ? (
+                <Menu>
+                  <MenuButton as={Button} variant="ghost" px={1}>
+                    <HStack>
+                      <Avatar size="sm" name={profile?.username || user?.email || 'User'} />
+                    </HStack>
+                  </MenuButton>
+                  <MenuList>
+                    <MenuItem isDisabled>
+                      {profile?.username ? `@${profile.username}` : user?.email || 'Signed in'}
+                    </MenuItem>
+                    <MenuItem isDisabled>
+                      {profile?.public_id ? `UID #${profile.public_id}` : 'UID pending'}
+                    </MenuItem>
+                    <MenuItem as={RouterLink} to="/logout">Sign out</MenuItem>
+                  </MenuList>
+                </Menu>
+              ) : (
+                <Button
+                  onClick={openAuth}
+                  bgGradient="linear(to-r, #FFCFEF, #FFCFEF)"
+                  border="2px solid #2A3335"
+                  color="#2A3335"
+                  _hover={{ transform: 'translateY(-3px)' }}
+                >
+                  Login / Sign up
+                </Button>
+              )}
+            </React.Fragment>
 
             <IconButton
               aria-label="Open Menu"
@@ -208,6 +216,7 @@ const Navbar = () => {
       {/* Auth modal */}
       <AuthModal isOpen={authOpen} onClose={closeAuth} />
 
+      {/* Mobile drawer */}
       <Drawer placement="right" onClose={onClose} isOpen={isOpen}>
         <DrawerOverlay />
         <DrawerContent bg="#ffbed9">
@@ -233,10 +242,10 @@ const Navbar = () => {
           </DrawerHeader>
           <DrawerBody>
             <VStack spacing={4} align="start">
-              {navItems.map((navItem) => (
-                <NavLink key={navItem.label} href={navItem.href}>
-                  {navItem.label}
-                </NavLink>
+              {navItems.map((item) => (
+                <NavHashLink key={item.label} to={item.to} onClick={onClose}>
+                  {item.label}
+                </NavHashLink>
               ))}
               <HStack spacing={4}>
                 <Link href="https://x.com/tapmianus" isExternal>

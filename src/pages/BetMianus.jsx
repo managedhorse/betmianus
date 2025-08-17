@@ -240,15 +240,25 @@ const BetMianus = () => {
               <CoinTickerRandom />
             </Box>
           </MotionBox>
-
+          <Box as="section" id="airdrop" scrollMarginTop="88px">
           <Airdropsection />
+          </Box>
+          <Box as="section" id="tokeninfo" scrollMarginTop="88px">
            <Tokeninfosection />
+           </Box>
+           <Box as="section" id="tokenomics" scrollMarginTop="88px">
           <TokenomicsSection />
+          </Box>
+          <Box as="section" id="about" scrollMarginTop="88px">
           <Aboutsection />
+          </Box>
           <ProviderTicker />
+          <Box as="section" id="casino" scrollMarginTop="88px">
           <Casinosection />
+          </Box>
+          <Box as="section" id="faq" scrollMarginTop="88px">
             <FAQ />
-
+          </Box>
             <Footer />
           </Box>
      </Box>
