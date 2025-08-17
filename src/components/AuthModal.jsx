@@ -137,6 +137,29 @@ export default function AuthModal({ isOpen, onClose }) {
       setLoadingReset(false);
     };
 
+    const TermsLinks = () => (
+  <>
+    I am 18+ and accept the{' '}
+    <Link
+      href="/terms"
+      isExternal
+      textDecoration="underline"
+      onClick={(e) => e.stopPropagation()}
+    >
+      Terms
+    </Link>{' '}
+    &{' '}
+    <Link
+      href="/terms"
+      isExternal
+      textDecoration="underline"
+      onClick={(e) => e.stopPropagation()}
+    >
+      Risk Policy
+    </Link>
+  </>
+);
+
     return (
       <form onSubmit={submit}>
         <VStack align="stretch" spacing={3}>
@@ -306,8 +329,8 @@ export default function AuthModal({ isOpen, onClose }) {
           _focus={{ borderColor: 'gray.700', boxShadow: 'none' }}
         />
         <Checkbox isChecked={agree} onChange={(e) => setAgree(e.target.checked)}>
-          I am 18+ and accept the Terms & Risk Policy
-        </Checkbox>
+  <TermsLinks />
+</Checkbox>
         <Button type="submit" isLoading={loadingEmailUp}>Create account</Button>
 
         {/* Only shown when we actually did signUp and Supabase will send an email */}
@@ -394,8 +417,8 @@ export default function AuthModal({ isOpen, onClose }) {
             _focus={{ borderColor: 'gray.700', boxShadow: 'none' }}
           />
           <Checkbox isChecked={agree} onChange={(e) => setAgree(e.target.checked)}>
-            I am 18+ and accept the Terms & Risk Policy
-          </Checkbox>
+  <TermsLinks />
+</Checkbox>
           <Button type="submit" isLoading={loadingNickUp}>Create nickname account</Button>
         </VStack>
       </form>
