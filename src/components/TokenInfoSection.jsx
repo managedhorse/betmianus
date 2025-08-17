@@ -83,9 +83,7 @@ const TokenInfoSection = () => {
                   <Text fontFamily="'Slackey', sans-serif" fontSize={numberFontSize} color="white">
                     100,000,000,000
                   </Text>
-                  <Text fontFamily="'Slackey', sans-serif" fontSize={numberFontSize} color="white">
-                    One Hundred Billion Mianus
-                  </Text>
+                  
                 </VStack>
               </Box>
               <Divider borderColor="white" />
