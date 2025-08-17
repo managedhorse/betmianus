@@ -95,17 +95,17 @@ export default function AuthModal({ isOpen, onClose }) {
     const { error } = await supabase.auth.resend({ type: 'signup', email: pendingEmail });
     setMsg(error ? error.message : `Confirmation email re-sent to ${pendingEmail}.`);
   };
+  const [topTab, setTopTab] = useState(0);
 
-  const sendPasswordSetupLink = async (email) => {
-    if (!email) return;
-    setMsg('');
-    setLoadingSetPwLink(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}`,
-    });
-    setMsg(error ? error.message : `We sent a password set link to ${email}.`);
-    setLoadingSetPwLink(false);
-  };
+  const resetExistingPw = async (email) => {
+   if (!email) return;
+   setLoadingSetPwLink(true);
+   const { error } = await supabase.auth.resetPasswordForEmail(email, {
+     redirectTo: window.location.origin,
+   });
+   setMsg(error ? error.message : `Password reset link sent to ${email}.`);
+   setLoadingSetPwLink(false);
+ };
 
   // ---------- forms ----------
   const EmailSignIn = () => {
@@ -325,11 +325,7 @@ export default function AuthModal({ isOpen, onClose }) {
         <Button
           size="sm"
           variant="link"
-          onClick={() =>
-            supabase.auth.resetPasswordForEmail(existingEmail, {
-              redirectTo: window.location.origin,
-            })
-          }
+          onClick={() => resetExistingPw(existingEmail)}
           isLoading={loadingSetPwLink}
         >
           Reset password for {existingEmail}
@@ -478,7 +474,13 @@ export default function AuthModal({ isOpen, onClose }) {
   // -------- Render --------
   const AuthTabs = useMemo(
     () => (
-      <Tabs isFitted variant="unstyled">
+      <Tabs
+    isFitted
+    variant="unstyled"
+    index={topTab}
+    onChange={setTopTab}
+    isLazy={false}
+  >
         <TabList gap={2} mb="-1px">
           <Tab sx={binderTab}>Log in</Tab>
           <Tab sx={binderTab}>Sign up</Tab>
@@ -488,7 +490,7 @@ export default function AuthModal({ isOpen, onClose }) {
           {/* LOG IN */}
           <TabPanel>
             <VStack align="stretch" spacing={4}>
-              <GoogleSignInButton onError={(m) => setMsg(m)} />
+             <GoogleSignInButton isActive={topTab === 0} onError={(m) => setMsg(m)} />
 
               <HStack align="center"><Divider /><Text color="gray.600">or</Text><Divider /></HStack>
 
@@ -508,7 +510,7 @@ export default function AuthModal({ isOpen, onClose }) {
           {/* SIGN UP */}
           <TabPanel>
             <VStack align="stretch" spacing={4}>
-              <GoogleSignInButton onError={(m) => setMsg(m)} />
+              <GoogleSignInButton isActive={topTab === 1} onError={(m) => setMsg(m)} />
 
               <HStack align="center"><Divider /><Text color="gray.600">or</Text><Divider /></HStack>
 
@@ -527,7 +529,7 @@ export default function AuthModal({ isOpen, onClose }) {
         </TabPanels>
       </Tabs>
     ),
-   [] // no deps
+   [topTab]
   );
 
   return (
