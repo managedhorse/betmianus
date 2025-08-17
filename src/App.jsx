@@ -9,11 +9,14 @@ import NotFound from './pages/NotFound.jsx';
 import Account from './pages/Account.jsx';
 import RequireAuth from './routes/RequireAuth.jsx';
 import '@reown/appkit-wallet-button';
+import ScrollReset from './components/ScrollReset';
+
 
 function App() {
   return (
     <AppKitProvider>
       <BrowserRouter>
+      <ScrollReset />
         <Routes>
           <Route path="/" element={<BetMianus />} />
           <Route path="/logout" element={<Logout />} />
