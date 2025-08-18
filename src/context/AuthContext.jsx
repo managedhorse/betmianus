@@ -11,7 +11,7 @@ function removeSupabaseKeys(projectRef) {
     const defaults = [
       `sb-${projectRef}-auth-token`,
       `sb-${projectRef}-persist-session`,
-      'bm-auth-v1', // if you set a custom key in supabaseClient
+      'bm-auth-v1', // your custom storageKey if you set one in supabaseClient
     ];
     defaults.forEach((k) => localStorage.removeItem(k));
     // Defensive: clear any other sb-* keys
@@ -44,11 +44,9 @@ export default function AuthProvider({ children }) {
       .from('profiles')
       .select('username, public_id')
       .eq('id', userId)
-      .maybeSingle(); // returns null instead of throwing when no row exists
+      .maybeSingle(); // null if not yet created (fresh Google sign-in)
 
     if (error) {
-      // You can log for diagnostics if you like:
-      // console.warn('loadProfile error:', error);
       setProfile(null);
       return;
     }
@@ -100,7 +98,7 @@ export default function AuthProvider({ children }) {
     }
   }, [user, profile, loadProfile]);
 
-  // --- Sign out: await Supabase, clear storage, reset in-memory state
+  // --- Sign out: await Supabase, clear storage, reset in-memory state, then hard reload
   const signOut = useCallback(async () => {
     // 1) Clear local storage first to avoid any SDK race
     removeSupabaseKeys(projectRef);
@@ -108,20 +106,23 @@ export default function AuthProvider({ children }) {
     // 2) Revoke tokens (everywhere)
     try {
       await supabase.auth.signOut({ scope: 'global' });
-    } catch (e) {
+    } catch {
       // Non-fatal; continue cleanup
-      // console.error('supabase signOut error:', e?.message || e);
     }
 
     // 3) Clear again in case SDK re-wrote during sign-out
     removeSupabaseKeys(projectRef);
 
-    // 4) Reset app state
+    // 4) Reset app state immediately
     setSession(null);
     setUser(null);
     setProfile(null);
 
-    // 5) Return control to the caller (e.g., Logout page will navigate)
+    // 5) Full reload guarantees no stale in-memory auth in this SPA session
+    //    Avoid extra SPA navigations from callers; this will finish the flow.
+    window.location.replace('/');
+
+    // Return to satisfy callers that await signOut()
     return true;
   }, [projectRef]);
 
