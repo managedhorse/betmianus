@@ -171,7 +171,12 @@ export default function AuthModal({ isOpen, onClose }) {
           <Input
             type="email"
             placeholder="Email"
+            name="email"
             value={email}
+            autoCapitalize="none"
+  autoCorrect="off"
+  spellCheck={false}
+            autoComplete="email"
             onChange={(e) => setEmail(e.target.value)}
             required
             bg="white"
@@ -182,7 +187,9 @@ export default function AuthModal({ isOpen, onClose }) {
           <Input
             type="password"
             placeholder="Password"
+            name="password"
             value={password}
+            autoComplete="current-password"
             onChange={(e) => setPassword(e.target.value)}
             required
             bg="white"
@@ -225,27 +232,35 @@ export default function AuthModal({ isOpen, onClose }) {
     return (
       <form onSubmit={submit}>
         <VStack align="stretch" spacing={3}>
-          <Input
-            placeholder="Nickname (3–20 letters/numbers/_)"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-            bg="white"
-            borderColor="gray.400"
-            _placeholder={{ color: 'gray.500' }}
-            _focus={{ borderColor: 'gray.700', boxShadow: 'none' }}
-          />
-          <Input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            bg="white"
-            borderColor="gray.400"
-            _placeholder={{ color: 'gray.500' }}
-            _focus={{ borderColor: 'gray.700', boxShadow: 'none' }}
-          />
+          {/* NicknameSignIn */}
+<Input
+  name="username"
+  autoComplete="username"
+  placeholder="Nickname (3–20 letters/numbers/_)"
+  value={username}
+  autoCapitalize="none"
+  autoCorrect="off"
+  spellCheck={false}
+  onChange={(e) => setUsername(e.target.value)}
+  required
+  bg="white"
+  borderColor="gray.400"
+  _placeholder={{ color: 'gray.500' }}
+  _focus={{ borderColor: 'gray.700', boxShadow: 'none' }}
+/>
+<Input
+  type="password"
+  name="password"
+  autoComplete="current-password"
+  placeholder="Password"
+  value={password}
+  onChange={(e) => setPassword(e.target.value)}
+  required
+  bg="white"
+  borderColor="gray.400"
+  _placeholder={{ color: 'gray.500' }}
+  _focus={{ borderColor: 'gray.700', boxShadow: 'none' }}
+/>
           <Button type="submit" isLoading={loadingNickIn}>Log in with nickname</Button>
         </VStack>
       </form>
@@ -311,28 +326,36 @@ export default function AuthModal({ isOpen, onClose }) {
   return (
     <form onSubmit={submit}>
       <VStack align="stretch" spacing={3}>
-        <Input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          bg="white"
-          borderColor="gray.400"
-          _placeholder={{ color: 'gray.500' }}
-          _focus={{ borderColor: 'gray.700', boxShadow: 'none' }}
-        />
-        <Input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          bg="white"
-          borderColor="gray.400"
-          _placeholder={{ color: 'gray.500' }}
-          _focus={{ borderColor: 'gray.700', boxShadow: 'none' }}
-        />
+        {/* EmailSignUp */}
+<Input
+  type="email"
+  name="email"
+  autoCapitalize="none"
+  autoCorrect="off"
+  spellCheck={false}
+  autoComplete="email"
+  placeholder="Email"
+  value={email}
+  onChange={(e) => setEmail(e.target.value)}
+  required
+  bg="white"
+  borderColor="gray.400"
+  _placeholder={{ color: 'gray.500' }}
+  _focus={{ borderColor: 'gray.700', boxShadow: 'none' }}
+/>
+<Input
+  type="password"
+  name="new-password"
+  autoComplete="new-password"
+  placeholder="Password"
+  value={password}
+  onChange={(e) => setPassword(e.target.value)}
+  required
+  bg="white"
+  borderColor="gray.400"
+  _placeholder={{ color: 'gray.500' }}
+  _focus={{ borderColor: 'gray.700', boxShadow: 'none' }}
+/>
         <Checkbox isChecked={agree} onChange={(e) => setAgree(e.target.checked)}>
   <TermsLinks />
 </Checkbox>
@@ -400,27 +423,35 @@ export default function AuthModal({ isOpen, onClose }) {
     return (
       <form onSubmit={submit}>
         <VStack align="stretch" spacing={3}>
-          <Input
-            placeholder="Nickname (3–20 letters/numbers/_)"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-            bg="white"
-            borderColor="gray.400"
-            _placeholder={{ color: 'gray.500' }}
-            _focus={{ borderColor: 'gray.700', boxShadow: 'none' }}
-          />
-          <Input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            bg="white"
-            borderColor="gray.400"
-            _placeholder={{ color: 'gray.500' }}
-            _focus={{ borderColor: 'gray.700', boxShadow: 'none' }}
-          />
+          {/* NicknameSignUp */}
+<Input
+  name="username"
+  autoComplete="username"
+  placeholder="Nickname (3–20 letters/numbers/_)"
+  value={username}
+  autoCapitalize="none"
+  autoCorrect="off"
+  spellCheck={false}
+  onChange={(e) => setUsername(e.target.value)}
+  required
+  bg="white"
+  borderColor="gray.400"
+  _placeholder={{ color: 'gray.500' }}
+  _focus={{ borderColor: 'gray.700', boxShadow: 'none' }}
+/>
+<Input
+  type="password"
+  name="new-password"
+  autoComplete="new-password"
+  placeholder="Password"
+  value={password}
+  onChange={(e) => setPassword(e.target.value)}
+  required
+  bg="white"
+  borderColor="gray.400"
+  _placeholder={{ color: 'gray.500' }}
+  _focus={{ borderColor: 'gray.700', boxShadow: 'none' }}
+/>
           <Checkbox isChecked={agree} onChange={(e) => setAgree(e.target.checked)}>
   <TermsLinks />
 </Checkbox>
@@ -474,28 +505,33 @@ export default function AuthModal({ isOpen, onClose }) {
         <Text fontWeight="semibold">Set a new password</Text>
         <form onSubmit={submit}>
           <VStack align="stretch" spacing={3}>
-            <Input
-              type="password"
-              placeholder="New password"
-              value={pw1}
-              onChange={(e) => setPw1(e.target.value)}
-              required
-              bg="white"
-              borderColor="gray.400"
-              _placeholder={{ color: 'gray.500' }}
-              _focus={{ borderColor: 'gray.700', boxShadow: 'none' }}
-            />
-            <Input
-              type="password"
-              placeholder="Confirm new password"
-              value={pw2}
-              onChange={(e) => setPw2(e.target.value)}
-              required
-              bg="white"
-              borderColor="gray.400"
-              _placeholder={{ color: 'gray.500' }}
-              _focus={{ borderColor: 'gray.700', boxShadow: 'none' }}
-            />
+            {/* ResetPanel */}
+<Input
+  type="password"
+  name="new-password"
+  autoComplete="new-password"
+  placeholder="New password"
+  value={pw1}
+  onChange={(e) => setPw1(e.target.value)}
+  required
+  bg="white"
+  borderColor="gray.400"
+  _placeholder={{ color: 'gray.500' }}
+  _focus={{ borderColor: 'gray.700', boxShadow: 'none' }}
+/>
+<Input
+  type="password"
+  name="confirm-new-password"
+  autoComplete="new-password"
+  placeholder="Confirm new password"
+  value={pw2}
+  onChange={(e) => setPw2(e.target.value)}
+  required
+  bg="white"
+  borderColor="gray.400"
+  _placeholder={{ color: 'gray.500' }}
+  _focus={{ borderColor: 'gray.700', boxShadow: 'none' }}
+/>
             <Button type="submit" isLoading={saving}>Update password</Button>
           </VStack>
         </form>
