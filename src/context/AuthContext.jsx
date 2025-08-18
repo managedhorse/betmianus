@@ -1,24 +1,26 @@
 // src/context/AuthContext.jsx
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
 const AuthCtx = createContext(null);
 export const useAuth = () => useContext(AuthCtx);
 
+// Remove Supabase localStorage keys (plus any "sb-*" leftovers)
 function removeSupabaseKeys(projectRef) {
   try {
-    // Default keys Supabase uses; plus our custom key
     const defaults = [
       `sb-${projectRef}-auth-token`,
       `sb-${projectRef}-persist-session`,
-      'bm-auth-v1', // our custom key from supabaseClient.js
+      'bm-auth-v1', // if you set a custom key in supabaseClient
     ];
     defaults.forEach((k) => localStorage.removeItem(k));
-    // And remove any other sb-* leftovers for good measure
-    Object.keys(localStorage).forEach((k) => {
+    // Defensive: clear any other sb-* keys
+    for (const k of Object.keys(localStorage)) {
       if (k.startsWith('sb-')) localStorage.removeItem(k);
-    });
-  } catch {}
+    }
+  } catch {
+    // ignore storage errors (Safari private mode, etc.)
+  }
 }
 
 export default function AuthProvider({ children }) {
@@ -27,75 +29,106 @@ export default function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null);
   const [authReady, setAuthReady] = useState(false);
 
+  // Derive the project ref from your Supabase URL (e.g., pdryhnlzpenhzwhcvodr)
   const projectRef = useMemo(() => {
     try {
-      return new URL(import.meta.env.VITE_SUPABASE_URL).host.split('.')[0]; // e.g. pdryhnlzpenhzwhcvodr
-    } catch { return ''; }
+      return new URL(import.meta.env.VITE_SUPABASE_URL).host.split('.')[0];
+    } catch {
+      return '';
+    }
   }, []);
 
-  const loadProfile = async (userId) => {
-    const { data: p } = await supabase
+  const loadProfile = useCallback(async (userId) => {
+    if (!userId) return setProfile(null);
+    const { data, error } = await supabase
       .from('profiles')
       .select('username, public_id')
       .eq('id', userId)
-      .single();
-    setProfile(p ?? null);
-  };
+      .maybeSingle(); // returns null instead of throwing when no row exists
 
+    if (error) {
+      // You can log for diagnostics if you like:
+      // console.warn('loadProfile error:', error);
+      setProfile(null);
+      return;
+    }
+    setProfile(data ?? null);
+  }, []);
+
+  // Initial session + subscribe to auth state changes
   useEffect(() => {
+    let isMounted = true;
+
     (async () => {
       const { data } = await supabase.auth.getSession();
-      setSession(data.session ?? null);
-      setUser(data.session?.user ?? null);
-      if (data.session?.user) await loadProfile(data.session.user.id);
+      if (!isMounted) return;
+
+      const sess = data?.session ?? null;
+      setSession(sess);
+      setUser(sess?.user ?? null);
+
+      if (sess?.user?.id) {
+        await loadProfile(sess.user.id);
+      } else {
+        setProfile(null);
+      }
       setAuthReady(true);
     })();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, sess) => {
-        setSession(sess ?? null);
-        setUser(sess?.user ?? null);
-        if (sess?.user) await loadProfile(sess.user.id);
-        else setProfile(null);
+    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, sess) => {
+      if (!isMounted) return;
+      setSession(sess ?? null);
+      setUser(sess?.user ?? null);
+      if (sess?.user?.id) {
+        await loadProfile(sess.user.id);
+      } else {
+        setProfile(null);
       }
-    );
-    return () => subscription.unsubscribe();
-  }, []);
+    });
 
-  // Small retry if profile row was created by trigger and not yet visible
+    return () => {
+      isMounted = false;
+      sub?.subscription?.unsubscribe?.();
+    };
+  }, [loadProfile]);
+
+  // Small retry if profile row is created by a DB trigger and isn’t visible yet
   useEffect(() => {
     if (user && !profile) {
       const t = setTimeout(() => loadProfile(user.id), 800);
       return () => clearTimeout(t);
     }
-  }, [user, profile]);
+  }, [user, profile, loadProfile]);
 
-  const signOut = async () => {
-    // 1) Synchronously remove keys BEFORE calling Supabase (avoid any race)
+  // --- Sign out: await Supabase, clear storage, reset in-memory state
+  const signOut = useCallback(async () => {
+    // 1) Clear local storage first to avoid any SDK race
     removeSupabaseKeys(projectRef);
 
-    // 2) Ask Supabase to revoke tokens everywhere
+    // 2) Revoke tokens (everywhere)
     try {
       await supabase.auth.signOut({ scope: 'global' });
     } catch (e) {
-      console.error('Supabase signOut error:', e?.message || e);
+      // Non-fatal; continue cleanup
+      // console.error('supabase signOut error:', e?.message || e);
     }
 
-    // 3) Remove keys AGAIN (just in case the SDK re-wrote during signOut)
+    // 3) Clear again in case SDK re-wrote during sign-out
     removeSupabaseKeys(projectRef);
 
-    // 4) Reset in-memory state
+    // 4) Reset app state
     setSession(null);
     setUser(null);
     setProfile(null);
 
-    // 5) Hard reload to guarantee the UI remounts without any cached state
-    window.location.replace('/');
-  };
+    // 5) Return control to the caller (e.g., Logout page will navigate)
+    return true;
+  }, [projectRef]);
 
-  return (
-    <AuthCtx.Provider value={{ session, user, profile, authReady, signOut }}>
-      {children}
-    </AuthCtx.Provider>
+  const value = useMemo(
+    () => ({ session, user, profile, authReady, signOut }),
+    [session, user, profile, authReady, signOut]
   );
+
+  return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;
 }
