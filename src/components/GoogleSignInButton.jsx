@@ -17,7 +17,8 @@ export default function GoogleSignInButton({
   theme = 'outline',      // 'outline' | 'filled_blue' | 'filled_black'
   size = 'large',         // 'large' | 'medium' | 'small'
   shape = 'rectangular',  // 'rectangular' | 'pill' | 'circle' | 'square'
-  context = 'signin',     // 'signin' | 'signup' | 'use'
+  context = 'signin', 
+  observeResize = true,    
 }) {
   const containerRef = useRef(null);
   const [sdkReady, setSdkReady] = useState(
@@ -145,9 +146,12 @@ export default function GoogleSignInButton({
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const ro = new ResizeObserver(() => tryRender());
-    ro.observe(el);
-    return () => ro.disconnect();
+    let ro;
+   if (observeResize && 'ResizeObserver' in window) {
+     ro = new ResizeObserver(() => tryRender());
+     ro.observe(el);
+   }
+    return () => ro?.disconnect?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

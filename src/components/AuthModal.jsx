@@ -9,12 +9,16 @@ import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { FiArrowLeft } from 'react-icons/fi';
 import GoogleSignInButton from './GoogleSignInButton';
+import { useBreakpointValue } from '@chakra-ui/react';
 
 const appBlueGradient = 'linear(to-br, #0A5EB0, #0A97B0)';
 
 const binderTab = {
   px: 4,
   py: 2,
+  minH: 10,                 // bigger tap target
+  fontSize: 'md',           // ≥16px suppresses double-tap zoom heuristics
+  touchAction: 'manipulation', // no double-tap zoom on iOS
   fontWeight: 'semibold',
   color: 'gray.600',
   bg: 'transparent',
@@ -25,14 +29,13 @@ const binderTab = {
   _hover: { bg: 'gray.50', color: 'gray.800' },
   _focus: { boxShadow: 'none' },
   _selected: {
-  color: 'gray.900',
-  bg: 'white',
-  borderColor: 'gray.300',
-  borderBottomColor: 'white',
-  mb: '-1px',
-  
-  boxShadow: 'inset 0 -2px 0 #0A97B0',
-},
+    color: 'gray.900',
+    bg: 'white',
+    borderColor: 'gray.300',
+    borderBottomColor: 'white',
+    mb: '-1px',
+    boxShadow: 'inset 0 -2px 0 #0A97B0',
+  },
 };
 
 const TermsLinks = () => (
@@ -71,7 +74,7 @@ async function postJSON(url, body) {
 
 export default function AuthModal({ isOpen, onClose }) {
   const { user } = useAuth();
-
+  const observeResize = useBreakpointValue({ base: false, md: true });
   // -------- View state: "auth" (tabs) or "reset" (set new password) --------
   const [view, setView] = useState('auth'); // 'auth' | 'reset'
   const [isRecoverySession, setIsRecoverySession] = useState(false);
@@ -505,10 +508,11 @@ export default function AuthModal({ isOpen, onClose }) {
     () => (
       <Tabs
     isFitted
-    variant="unstyled"
-    index={topTab}
-    onChange={setTopTab}
-    isLazy={false}
+  variant="unstyled"
+  index={topTab}
+  onChange={setTopTab}
+  isLazy
+  lazyBehavior="unmount"
   >
         <TabList gap={2} mb="-1px">
           <Tab sx={binderTab}>Log in</Tab>
@@ -523,11 +527,12 @@ export default function AuthModal({ isOpen, onClose }) {
   isActive={topTab === 0}
   context="signin"
   onError={(m) => setMsg(m)}
+  observeResize={observeResize}
 />
 
               <HStack align="center"><Divider /><Text color="gray.600">or</Text><Divider /></HStack>
 
-              <Tabs variant="line" colorScheme="gray" isFitted>
+              <Tabs variant="line" colorScheme="gray" isFitted isLazy lazyBehavior="unmount">
                 <TabList>
                   <Tab fontWeight="semibold" _focus={{ boxShadow: 'none' }}>Email</Tab>
                   <Tab fontWeight="semibold" _focus={{ boxShadow: 'none' }}>Nickname</Tab>
@@ -547,11 +552,12 @@ export default function AuthModal({ isOpen, onClose }) {
   isActive={topTab === 1}
   context="signup"
   onError={(m) => setMsg(m)}
+  observeResize={observeResize}
 />
 
               <HStack align="center"><Divider /><Text color="gray.600">or</Text><Divider /></HStack>
 
-              <Tabs variant="line" colorScheme="gray" isFitted>
+              <Tabs variant="line" colorScheme="gray" isFitted isLazy lazyBehavior="unmount">
                 <TabList>
                   <Tab fontWeight="semibold" _focus={{ boxShadow: 'none' }}>Email</Tab>
                   <Tab fontWeight="semibold" _focus={{ boxShadow: 'none' }}>Nickname</Tab>
@@ -566,14 +572,14 @@ export default function AuthModal({ isOpen, onClose }) {
         </TabPanels>
       </Tabs>
     ),
-   [topTab]
+   [topTab, observeResize]
   );
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} isCentered>
       <ModalOverlay
-  bg="rgba(9, 36, 73, 0.55)"           // blue-tinted scrim
-  backdropFilter="blur(6px)"            // frosted effect
+  bg={{ base: 'rgba(9,36,73,0.35)', md: 'rgba(9,36,73,0.55)' }}
+  backdropFilter={{ base: 'none', md: 'blur(6px)' }}   // disable blur on mobile
 />
 
 <ModalContent id="auth-modal" bg="transparent" boxShadow="none" mx={4}>
