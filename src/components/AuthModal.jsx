@@ -10,6 +10,7 @@ import { useAuth } from '../context/AuthContext';
 import { FiArrowLeft } from 'react-icons/fi';
 import GoogleSignInButton from './GoogleSignInButton';
 import { useBreakpointValue } from '@chakra-ui/react';
+import CustomConnectButton from './CustomConnectButton';
 
 const appBlueGradient = 'linear(to-br, #0A5EB0, #0A97B0)';
 
@@ -565,6 +566,7 @@ export default function AuthModal({ isOpen, onClose }) {
   onError={(m) => setMsg(m)}
   observeResize={observeResize}
 />
+<CustomConnectButton alwaysDisabled label="Web3 (coming soon)" />
 
               <HStack align="center"><Divider /><Text color="gray.600">or</Text><Divider /></HStack>
 
@@ -590,7 +592,7 @@ export default function AuthModal({ isOpen, onClose }) {
   onError={(m) => setMsg(m)}
   observeResize={observeResize}
 />
-
+<CustomConnectButton alwaysDisabled label="Web3 (coming soon)" />
               <HStack align="center"><Divider /><Text color="gray.600">or</Text><Divider /></HStack>
 
               <Tabs variant="line" colorScheme="gray" isFitted isLazy lazyBehavior="unmount">

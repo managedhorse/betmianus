@@ -162,7 +162,7 @@ const Navbar = () => {
 
             {isConnected && <appkit-network-button disabled={false} size="sm" />}
 
-            <CustomConnectButton />
+            {isConnected && <CustomConnectButton />}
 
             <React.Fragment key={user?.id || 'anon'}>
               {user ? (
