@@ -43,13 +43,8 @@ const distributionData = [
   },
   {
     name: 'Airdrop',
-    value: 10,
+    value: 20,
     explanation: 'Supply shared by Tap Mianus Players.',
-  },
-  {
-    name: 'ICO',
-    value: 10,
-    explanation: 'ICO maybe coming soon if the community demands it.',
   },
   {
     name: 'Liquidity',
