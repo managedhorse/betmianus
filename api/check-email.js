@@ -3,23 +3,31 @@ import { createClient } from '@supabase/supabase-js';
 
 const URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-const admin = createClient(URL, SERVICE_ROLE, { auth: { persistSession: false } });
+const admin = URL && SERVICE_ROLE
+  ? createClient(URL, SERVICE_ROLE, { auth: { persistSession: false } })
+  : null;
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).end();
+  if (req.method !== 'POST') {
+    return res.status(200).json({ exists: false, providers: [], note: 'bad_method' });
+  }
 
-  const { email } = req.body ?? {};
-  if (!email) return res.status(400).json({ error: 'Missing email' });
-  if (!URL || !SERVICE_ROLE) return res.status(500).json({ error: 'Server misconfigured' });
+  const raw = req.body?.email || '';
+  const email = raw.trim().toLowerCase();
+  if (!email) return res.status(200).json({ exists: false, providers: [], note: 'missing_email' });
+
+  if (!admin) {
+    console.error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
+    return res.status(200).json({ exists: false, providers: [], note: 'server_misconfigured' });
+  }
 
   try {
     const { data, error } = await admin.auth.admin.getUserByEmail(email);
 
-    // Not found is fine
-    if (error && (error.status === 404 || /not found/i.test(error.message)))
+    // Not found → exists: false
+    if (error && (error.status === 404 || /not found/i.test(error.message))) {
       return res.status(200).json({ exists: false, providers: [] });
-
+    }
     if (error) {
       console.error('getUserByEmail error:', error);
       return res.status(200).json({ exists: false, providers: [], note: 'server_error' });
