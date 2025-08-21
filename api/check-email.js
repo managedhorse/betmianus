@@ -1,30 +1,32 @@
 // /api/check-email.js
 import { createClient } from '@supabase/supabase-js';
 
-const URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const URL = process.env.VITE_SUPABASE_URL;               // <- from your Vercel env
+const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY; // <- from your Vercel env
+
 const admin = URL && SERVICE_ROLE
   ? createClient(URL, SERVICE_ROLE, { auth: { persistSession: false } })
   : null;
 
 export default async function handler(req, res) {
+  // Always respond 200 so the client can continue gracefully
   if (req.method !== 'POST') {
     return res.status(200).json({ exists: false, providers: [], note: 'bad_method' });
   }
 
-  const raw = req.body?.email || '';
-  const email = raw.trim().toLowerCase();
+  // Body might be a string on some hosts
+  const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
+  const email = (body.email || '').trim().toLowerCase();
   if (!email) return res.status(200).json({ exists: false, providers: [], note: 'missing_email' });
 
   if (!admin) {
-    console.error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
+    console.error('Missing VITE_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
     return res.status(200).json({ exists: false, providers: [], note: 'server_misconfigured' });
   }
 
   try {
     const { data, error } = await admin.auth.admin.getUserByEmail(email);
 
-    // Not found → exists: false
     if (error && (error.status === 404 || /not found/i.test(error.message))) {
       return res.status(200).json({ exists: false, providers: [] });
     }
