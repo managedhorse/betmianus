@@ -275,53 +275,52 @@ export default function AuthModal({ isOpen, onClose }) {
   const [existingProviders, setExistingProviders] = useState([]); // <— add
 
   const submit = async (e) => {
-    e.preventDefault();
-    setMsg('');
-    setExistingEmail('');
-    setPendingEmail('');
-    setExistingProviders([]);
-    if (!agree) return setMsg('Please confirm you are 18+ and accept the Terms.');
+  e.preventDefault();
+  setMsg('');
+  setExistingEmail('');
+  setPendingEmail('');
+  setExistingProviders([]);
+  if (!agree) return setMsg('Please confirm you are 18+ and accept the Terms.');
 
-    // 1) PRE-CHECK on the server — block if email already exists for any provider
-    try {
-  const check = await postJSON('/api/check-email', { email });
-  if (check.exists) {
-    setExistingEmail(email);
-    const prov = check.providers || [];
-    setExistingProviders(prov);
-
-    // Your rule: block and show a single message
-    setMsg('That email is already in use.');
-
-    // Do NOT proceed to signUp()
-    return;
+  // server pre-check (keep as-is)
+  try {
+    const check = await postJSON('/api/check-email', { email });
+    if (check.exists) {
+      setExistingEmail(email);
+      setExistingProviders(check.providers || []);
+      setMsg('That email is already in use.');
+      return;
+    }
+  } catch {
+    // you can choose to continue or block; here we continue, but show a note
+    setMsg('Could not verify email. Attempting to sign you up…');
   }
-} catch (err) {
-  setMsg('Could not verify email. Please try again.');
-  return;
-}
 
-    // 2) Safe to create the email/password account
-    setLoadingEmailUp(true);
+  setLoadingEmailUp(true);
+  try {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { emailRedirectTo: window.location.origin },
     });
-    setLoadingEmailUp(false);
+    if (error) throw error;
 
-    if (error) return setMsg(error.message);
-
-    // If there's a session, confirmation is OFF → signed in immediately
     if (data?.session) {
       setMsg('Account created. You’re signed in!');
-      return;
+    } else {
+      setPendingEmail(email);
+      setMsg(`We sent a confirmation link to ${email}.`);
     }
-
-    // Confirmation required
-    setPendingEmail(email);
-    setMsg(`We sent a confirmation link to ${email}.`);
-  };
+  } catch (err) {
+    const m = String(err?.message || err);
+    const timeout = /(?:504|timeout|network.*failed|fetch.*failed)/i.test(m);
+    setMsg(timeout
+      ? 'Sign up temporarily failed (network timeout). Please try again in a minute.'
+      : m);
+  } finally {
+    setLoadingEmailUp(false);
+  }
+};
 
   // UI (unchanged, but shows different actions when we blocked for existing email)
   return (
