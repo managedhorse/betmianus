@@ -128,7 +128,7 @@ function AirdropSection() {
               textShadow="1px 1px #2A3335">
                 We've allocated a generous portion of $Mianus for our players. We welcome everyone to partake in tapping Mianus
                 </Heading>
-                <Box as="a" href="https://t.me/tapmianusbot" target="_blank" rel="noopener noreferrer" position="relative" display="inline-block">
+                <Box as="a" href="https://t.me/TapMianusV2Bot" target="_blank" rel="noopener noreferrer" position="relative" display="inline-block">
               <MotionImage
                 src={Tapapp}
                 alt="Tap Mianus App"
@@ -309,7 +309,7 @@ function AirdropSection() {
         <Flex justify="center">
         <Button
   as="a"
-  href="https://t.me/tapmianusbot"
+  href="https://t.me/TapMianusV2Bot"
   target="_blank"
   rel="noopener noreferrer"
   px={{ base: '6', md: '8' }}
